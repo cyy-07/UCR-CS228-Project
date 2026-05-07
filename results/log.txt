@@ -1,0 +1,274 @@
+nohup: ignoring input
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+Device: cuda
+
+=======================================================
+EXP 1 — Full-data baseline  (feature_mode=no_rv)
+=======================================================
+
+  [persistence]
+    MAE=48.858  RMSE=103.428  params=0  time=0.2s
+
+  [mlp]
+    ep  1  val_mse=0.61823  [mlp  1s]
+    ep 10  val_mse=0.62502  [mlp  2s]
+    ep 20  val_mse=0.61728  [mlp  4s]
+    MAE=56.238  RMSE=95.090  params=675,224  time=6.3s
+
+  [lstm]
+    ep  1  val_mse=0.64988  [lstm  0s]
+    ep 10  val_mse=0.92151  [lstm  3s]
+    MAE=43.018  RMSE=86.371  params=215,064  time=3.7s
+
+  [dlinear]
+    ep  1  val_mse=0.68551  [dlinear  0s]
+    ep 10  val_mse=0.64116  [dlinear  2s]
+    ep 20  val_mse=0.62954  [dlinear  4s]
+    MAE=49.263  RMSE=81.588  params=4,683  time=5.3s
+
+  [patchtst]
+    ep  1  val_mse=0.73810  [patchtst  1s]
+    ep 10  val_mse=0.76261  [patchtst  13s]
+    MAE=59.980  RMSE=88.619  params=141,720  time=17.5s
+  → saved results/baseline.csv
+
+           model               MAE              RMSE            params           train_s
+────────────────────────────────────────────────────────────────────────────────────────
+     persistence  48.8578392374977  103.427791328420                 0               0.2
+             mlp  56.2384508016124  95.0901477727435            675224               6.3
+            lstm  43.0184278026212  86.3709497084257            215064               3.7
+         dlinear  49.2634352030694  81.5875148016832              4683               5.3
+        patchtst  59.9800000317125  88.6191944494528            141720              17.5
+
+=======================================================
+EXP 2 — Data scarcity
+=======================================================
+
+  ratio=100%  train_win=13,695
+    ep  1  val_mse=0.64506  [mlp@100%  0s]
+    ep 10  val_mse=0.58898  [mlp@100%  2s]
+    mlp  MAE=63.514  RMSE=98.711
+    ep  1  val_mse=0.65131  [lstm@100%  0s]
+    ep 10  val_mse=0.79414  [lstm@100%  3s]
+    lstm  MAE=57.021  RMSE=86.386
+    ep  1  val_mse=0.69645  [dlinear@100%  0s]
+    ep 10  val_mse=0.63922  [dlinear@100%  2s]
+    ep 20  val_mse=0.63625  [dlinear@100%  4s]
+    ep 30  val_mse=0.63170  [dlinear@100%  6s]
+    ep 40  val_mse=0.62864  [dlinear@100%  8s]
+    dlinear  MAE=50.394  RMSE=82.011
+    ep  1  val_mse=0.70905  [patchtst@100%  1s]
+    ep 10  val_mse=0.77915  [patchtst@100%  13s]
+    patchtst  MAE=56.452  RMSE=88.651
+
+  ratio=50%  train_win=6,847
+    ep  1  val_mse=0.77585  [mlp@50%  0s]
+    ep 10  val_mse=0.73173  [mlp@50%  1s]
+    mlp  MAE=47.729  RMSE=87.105
+    ep  1  val_mse=0.68424  [lstm@50%  0s]
+    ep 10  val_mse=0.74275  [lstm@50%  2s]
+    lstm  MAE=39.394  RMSE=86.761
+    ep  1  val_mse=0.73989  [dlinear@50%  0s]
+    ep 10  val_mse=0.80603  [dlinear@50%  1s]
+    dlinear  MAE=48.141  RMSE=88.311
+    ep  1  val_mse=0.90571  [patchtst@50%  1s]
+    ep 10  val_mse=1.13912  [patchtst@50%  7s]
+    patchtst  MAE=80.314  RMSE=117.029
+
+  ratio=20%  train_win=2,739
+    ep  1  val_mse=1.91664  [mlp@20%  0s]
+    ep 10  val_mse=1.12987  [mlp@20%  0s]
+    mlp  MAE=99.597  RMSE=138.584
+    ep  1  val_mse=0.72893  [lstm@20%  0s]
+    ep 10  val_mse=1.40028  [lstm@20%  1s]
+    lstm  MAE=55.044  RMSE=87.567
+    ep  1  val_mse=0.74206  [dlinear@20%  0s]
+    ep 10  val_mse=0.82269  [dlinear@20%  0s]
+    dlinear  MAE=51.146  RMSE=86.168
+    ep  1  val_mse=0.80407  [patchtst@20%  0s]
+    ep 10  val_mse=0.94013  [patchtst@20%  3s]
+    patchtst  MAE=60.864  RMSE=103.636
+
+  ratio=10%  train_win=1,369
+    ep  1  val_mse=0.84986  [mlp@10%  0s]
+    ep 10  val_mse=2.10462  [mlp@10%  0s]
+    mlp  MAE=107.698  RMSE=137.916
+    ep  1  val_mse=0.71816  [lstm@10%  0s]
+    ep 10  val_mse=1.92159  [lstm@10%  1s]
+    lstm  MAE=50.889  RMSE=86.603
+    ep  1  val_mse=0.72649  [dlinear@10%  0s]
+    ep 10  val_mse=0.70742  [dlinear@10%  0s]
+    ep 20  val_mse=0.72373  [dlinear@10%  1s]
+    dlinear  MAE=58.069  RMSE=89.358
+    ep  1  val_mse=0.78120  [patchtst@10%  0s]
+    ep 10  val_mse=1.28702  [patchtst@10%  2s]
+    patchtst  MAE=60.341  RMSE=95.132
+  → saved results/scarcity.csv
+
+           model             ratio               MAE              RMSE
+──────────────────────────────────────────────────────────────────────
+             mlp               1.0  63.5136509892480  98.7111168721551
+            lstm               1.0  57.0206063577107  86.3858733648805
+         dlinear               1.0  50.3936916955488  82.0110199599935
+        patchtst               1.0  56.4516821119506  88.6513720595870
+             mlp               0.5  47.7291797679085  87.1052755092711
+            lstm               0.5  39.3942070686221  86.7606695112756
+         dlinear               0.5  48.1410094284004  88.3105080356552
+        patchtst               0.5  80.3136096985175  117.028911429151
+             mlp               0.2  99.5967670378981  138.583767055877
+            lstm               0.2  55.0443605364907  87.5668181273119
+         dlinear               0.2  51.1461545090901  86.1680761578401
+        patchtst               0.2  60.8642581594350  103.635687983518
+             mlp               0.1  107.697673357435  137.915812731243
+            lstm               0.1  50.8890286723668  86.6031948959898
+         dlinear               0.1  58.0688058411817  89.3577682180831
+        patchtst               0.1  60.3411276673238  95.1323181650815
+     persistence               1.0  48.8578392374977  103.427791328420
+     persistence               0.5  48.8578392374977  103.427791328420
+     persistence               0.2  48.8578392374977  103.427791328420
+     persistence               0.1  48.8578392374977  103.427791328420
+  → saved results/scarcity_mae.png
+
+=======================================================
+EXP 3 — Input corruption  (models trained on clean data)
+=======================================================
+
+  training mlp...
+    ep  1  val_mse=0.62293  [mlp  0s]
+    ep 10  val_mse=0.58849  [mlp  2s]
+    ep 20  val_mse=0.57168  [mlp  4s]
+    ep 30  val_mse=0.57589  [mlp  5s]
+
+  training lstm...
+    ep  1  val_mse=0.65744  [lstm  0s]
+    ep 10  val_mse=0.85695  [lstm  3s]
+
+  training dlinear...
+    ep  1  val_mse=0.70571  [dlinear  0s]
+    ep 10  val_mse=0.63900  [dlinear  2s]
+    ep 20  val_mse=0.63250  [dlinear  4s]
+
+  training patchtst...
+    ep  1  val_mse=0.69511  [patchtst  1s]
+    ep 10  val_mse=0.74413  [patchtst  12s]
+  mlp            clean          MAE=48.597  RMSE=84.829
+  lstm           clean          MAE=41.674  RMSE=83.671
+  dlinear        clean          MAE=53.062  RMSE=83.363
+  patchtst       clean          MAE=56.298  RMSE=87.284
+  persistence    clean          MAE=48.858  RMSE=103.428
+  mlp            noise_0.1      MAE=48.633  RMSE=84.893
+  lstm           noise_0.1      MAE=41.683  RMSE=83.678
+  dlinear        noise_0.1      MAE=53.149  RMSE=83.406
+  patchtst       noise_0.1      MAE=56.233  RMSE=87.295
+  persistence    noise_0.1      MAE=51.217  RMSE=104.023
+  mlp            noise_0.3      MAE=48.785  RMSE=85.066
+  lstm           noise_0.3      MAE=41.770  RMSE=83.663
+  dlinear        noise_0.3      MAE=53.904  RMSE=84.209
+  patchtst       noise_0.3      MAE=56.042  RMSE=87.625
+  persistence    noise_0.3      MAE=61.064  RMSE=108.705
+  mlp            mask_20pct     MAE=61.352  RMSE=107.041
+  lstm           mask_20pct     MAE=47.610  RMSE=87.562
+  dlinear        mask_20pct     MAE=59.657  RMSE=91.534
+  patchtst       mask_20pct     MAE=62.541  RMSE=94.086
+  persistence    mask_20pct     MAE=48.858  RMSE=103.428
+  mlp            mask_40pct     MAE=66.599  RMSE=112.099
+  lstm           mask_40pct     MAE=50.776  RMSE=88.762
+  dlinear        mask_40pct     MAE=62.054  RMSE=94.766
+  patchtst       mask_40pct     MAE=64.770  RMSE=97.048
+  persistence    mask_40pct     MAE=48.858  RMSE=103.428
+  → saved results/corruption.csv
+
+           model         condition               MAE              RMSE
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+/home/yiyangchen/CS228/src/models.py:163: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.enc  = nn.TransformerEncoder(enc_layer, n_layers)
+──────────────────────────────────────────────────────────────────────
+             mlp             clean  48.5972525648790  84.8287620763139
+            lstm             clean  41.6736681026070  83.6711988724601
+         dlinear             clean  53.0624865380592  83.3631506636687
+        patchtst             clean  56.2982905402466  87.2842539601573
+     persistence             clean  48.8578392374977  103.427791328420
+             mlp         noise_0.1  48.6333046691364  84.8934819876849
+            lstm         noise_0.1  41.6829288023774  83.6782535021444
+         dlinear         noise_0.1  53.1488227554402  83.4058437424122
+        patchtst         noise_0.1  56.2333880815919  87.2951816899493
+     persistence         noise_0.1  51.2169075444044  104.022912813257
+             mlp         noise_0.3  48.7852716582955  85.0661699395231
+            lstm         noise_0.3  41.7703974950773  83.6631336329882
+         dlinear         noise_0.3  53.9036866740186  84.2091826869967
+        patchtst         noise_0.3  56.0419161793533  87.6247945977031
+     persistence         noise_0.3  61.0637409602356  108.705340128843
+             mlp        mask_20pct  61.3524203182370  107.040668940544
+            lstm        mask_20pct  47.6097793854636  87.5622001970228
+         dlinear        mask_20pct  59.6565764041244  91.5342465811935
+        patchtst        mask_20pct  62.5411993397793  94.0862140733891
+     persistence        mask_20pct  48.8578392374977  103.427791328420
+             mlp        mask_40pct  66.5992603786278  112.099281345719
+            lstm        mask_40pct  50.7762064869399  88.7615515685102
+         dlinear        mask_40pct  62.0535331712281  94.7661155567148
+        patchtst        mask_40pct  64.7703775888576  97.0480202230594
+     persistence        mask_40pct  48.8578392374977  103.427791328420
+
+=======================================================
+EXP 4 — Feature irrelevance  (no_rv vs all)
+=======================================================
+
+  feature_mode=no_rv  n_feat=26
+    persistence  MAE=48.858  RMSE=103.428
+    ep  1  val_mse=0.67880  [mlp[no_rv]  0s]
+    ep 10  val_mse=0.61486  [mlp[no_rv]  2s]
+    ep 20  val_mse=0.59822  [mlp[no_rv]  4s]
+    mlp  MAE=59.210  RMSE=93.746
+    ep  1  val_mse=0.64752  [lstm[no_rv]  0s]
+    ep 10  val_mse=0.73731  [lstm[no_rv]  3s]
+    lstm  MAE=53.144  RMSE=86.558
+    ep  1  val_mse=0.67877  [dlinear[no_rv]  0s]
+    ep 10  val_mse=0.63142  [dlinear[no_rv]  2s]
+    dlinear  MAE=48.657  RMSE=81.473
+    ep  1  val_mse=0.74882  [patchtst[no_rv]  1s]
+    ep 10  val_mse=0.77927  [patchtst[no_rv]  12s]
+    patchtst  MAE=56.300  RMSE=86.167
+
+  feature_mode=all  n_feat=28
+    persistence  MAE=48.858  RMSE=103.428
+    ep  1  val_mse=0.62405  [mlp[all]  0s]
+    ep 10  val_mse=0.65546  [mlp[all]  2s]
+    mlp  MAE=55.055  RMSE=90.448
+    ep  1  val_mse=0.66485  [lstm[all]  0s]
+    ep 10  val_mse=0.69191  [lstm[all]  3s]
+    lstm  MAE=50.739  RMSE=93.816
+    ep  1  val_mse=0.67612  [dlinear[all]  0s]
+    ep 10  val_mse=0.64157  [dlinear[all]  2s]
+    ep 20  val_mse=0.63141  [dlinear[all]  4s]
+    dlinear  MAE=50.730  RMSE=82.575
+    ep  1  val_mse=0.69283  [patchtst[all]  1s]
+    ep 10  val_mse=0.75794  [patchtst[all]  13s]
+    patchtst  MAE=53.635  RMSE=87.597
+  → saved results/feature.csv
+
+           model      feature_mode               MAE              RMSE
+──────────────────────────────────────────────────────────────────────
+     persistence             no_rv  48.8578392374977  103.427791328420
+             mlp             no_rv  59.2099610450563  93.7457080838341
+            lstm             no_rv  53.1439440783178  86.5582770367367
+         dlinear             no_rv  48.6570048916416  81.4728311455064
+        patchtst             no_rv  56.2997022445078  86.1667783582728
+     persistence               all  48.8578392374977  103.427791328420
+             mlp               all  55.0554338193118  90.4477877718308
+            lstm               all  50.7389598471666  93.8163465008527
+         dlinear               all  50.7295376353060  82.5752951059106
+        patchtst               all  53.6354265753598  87.5973267687051
+
+Done. Results in ./results/
