@@ -1,2 +1,33 @@
+# --- data & generated artefacts (per project policy) ---
+data/
+results/
+
+# --- Python ---
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- experiment / log noise ---
+*.log
+nohup.out
+wandb/
+runs/
+lightning_logs/
+
+# --- model checkpoints (large, regenerable) ---
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# --- editor / OS junk ---
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
+Thumbs.db
+~$*

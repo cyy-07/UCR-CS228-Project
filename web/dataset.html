@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dataset Setup — Sensor Floor Plan · UCR CS228</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="sensors.js"></script>
+<style>
+  :root {
+    --ucr-blue: #003DA5;
+    --ucr-gold: #FFB81C;
+    --ucr-navy: #001F4E;
+    --gray-50: #F7F8FA;
+    --gray-100: #EEF1F4;
+    --gray-300: #C9CFD6;
+    --gray-700: #4A5159;
+    --text: #1B2331;
+  }
+  *  { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", "Segoe UI", "PingFang SC", sans-serif;
+    color: var(--text);
+    background: var(--gray-50);
+  }
+  header {
+    background: linear-gradient(135deg, var(--ucr-navy), var(--ucr-blue));
+    color: white;
+    padding: 28px 40px 20px;
+    border-bottom: 5px solid var(--ucr-gold);
+  }
+  header .badge {
+    display: inline-block;
+    background: var(--ucr-gold);
+    color: var(--ucr-navy);
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 24px;
+  }
+  header .meta { color: #d8e2f2; font-size: 13px; }
+  header .meta a { color: var(--ucr-gold); text-decoration: none; }
+
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    max-width: 1280px;
+    margin: 22px auto;
+    padding: 0 24px;
+  }
+  .floor-plan {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,31,78,.06);
+    padding: 20px;
+    position: relative;
+  }
+  .info-panel {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,31,78,.06);
+    padding: 20px 22px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+  }
+  .legend {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--gray-50);
+    border-left: 4px solid var(--ucr-blue);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--gray-700);
+    line-height: 1.6;
+  }
+  .legend .swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  /* ── SVG floor plan ── */
+  svg.house { width: 100%; height: auto; max-height: 640px; display: block; }
+  .room {
+    fill: #F7F1E2;
+    stroke: var(--ucr-navy);
+    stroke-width: 1.5;
+    transition: fill .15s;
+  }
+  .room:hover { fill: #FFE9B0; cursor: pointer; }
+  .room.active { fill: var(--ucr-gold); }
+  .room.outside { fill: #DBE6F5; }
+  .room.outside:hover { fill: #BBD0EE; }
+  .room.outside.active { fill: var(--ucr-blue); }
+  .room-label {
+    fill: var(--ucr-navy);
+    font-size: 13px;
+    font-weight: 700;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  .sensor-tag {
+    fill: var(--ucr-blue);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-anchor: middle;
+    pointer-events: none;
+    font-family: "Consolas", "Menlo", monospace;
+  }
+  .sensor-tag.active { fill: white; }
+  .meter {
+    fill: var(--ucr-gold);
+    stroke: var(--ucr-navy);
+    stroke-width: 2;
+    transition: fill .15s;
+  }
+  .meter:hover { cursor: pointer; fill: #E59E00; }
+  .meter.active { fill: #C58800; }
+  .meter-text {
+    fill: var(--ucr-navy);
+    font-size: 12px;
+    font-weight: 700;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  .compass {
+    fill: var(--gray-700);
+    font-size: 11px;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  /* ── info-panel content ── */
+  .info-panel h2 {
+    margin: 0 0 14px;
+    color: var(--ucr-navy);
+    font-size: 18px;
+    border-bottom: 2px solid var(--ucr-gold);
+    padding-bottom: 6px;
+  }
+  .info-panel .selected-room {
+    font-size: 13px;
+    color: var(--ucr-blue);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .info-panel .selected-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ucr-navy);
+    margin-bottom: 12px;
+    font-family: "Consolas", "Menlo", monospace;
+  }
+  .info-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+  .info-panel td {
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .info-panel td:first-child {
+    color: var(--gray-700);
+    font-weight: 600;
+  }
+  .info-panel td:last-child {
+    text-align: right;
+    font-family: "Consolas", "Menlo", monospace;
+    color: var(--ucr-navy);
+    font-weight: 700;
+  }
+  .corr-bar {
+    margin-top: 12px;
+    background: var(--gray-100);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .corr-bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ucr-blue), var(--ucr-gold));
+    transition: width .3s;
+  }
+  .corr-caption {
+    font-size: 11px;
+    color: var(--gray-700);
+    margin-top: 4px;
+  }
+  .ranking {
+    margin-top: 22px;
+  }
+  .ranking h3 {
+    margin: 0 0 8px;
+    color: var(--ucr-blue);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .ranking ol {
+    padding-left: 22px;
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+  .ranking li code {
+    background: var(--gray-100);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ucr-navy);
+    font-weight: 700;
+  }
+  .nav-back {
+    display: inline-block;
+    margin: 14px auto 0;
+    padding: 6px 14px;
+    background: var(--ucr-blue);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  #timeseries {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,31,78,.06);
+    padding: 18px 20px;
+    margin: 0 24px 40px;
+    max-width: 1232px;
+    margin-left: auto; margin-right: auto;
+  }
+  #timeseries h2 {
+    margin: 0 0 12px;
+    color: var(--ucr-navy);
+    font-size: 18px;
+    border-bottom: 2px solid var(--ucr-gold);
+    padding-bottom: 6px;
+  }
+  #ts-plot { width: 100%; height: 380px; }
+
+  footer {
+    background: var(--ucr-navy);
+    color: #c4ceeb;
+    padding: 18px 40px;
+    font-size: 12px;
+    text-align: center;
+    border-top: 4px solid var(--ucr-gold);
+  }
+  footer a { color: var(--ucr-gold); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+    .info-panel { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">UCR CS 228 · Dataset Visualization</div>
+  <h1>UCI Appliances Energy — Sensor Layout</h1>
+  <div class="meta">
+    Belgian passive house, Stambruges · 4.5 months · 10-min sampling · 28 sensors
+    &nbsp;·&nbsp; <a href="index.html">← back to report</a>
+  </div>
+</header>
+
+<div class="container">
+  <!-- ── Left: SVG floor plan ── -->
+  <div class="floor-plan">
+    <svg class="house" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg">
+      <!-- compass -->
+      <g transform="translate(680, 30)">
+        <circle r="14" fill="white" stroke="#4A5159" stroke-width="1"/>
+        <polygon points="0,-10 4,0 0,10 -4,0" fill="#001F4E"/>
+        <text x="0" y="-18" class="compass">N</text>
+      </g>
+
+      <!-- ── House outline ── -->
+      <rect x="40" y="60" width="500" height="440" fill="none"
+            stroke="#001F4E" stroke-width="3" rx="6"/>
+      <text x="290" y="48" class="compass" style="font-size:13px; font-weight:700;">
+        Passive House (ground + upstairs layout)
+      </text>
+
+      <!-- ── Ground floor rooms (top half) ── -->
+      <!-- Row 1: Kitchen | Living | Office -->
+      <g data-sensors="T1,RH_1" data-room="Kitchen">
+        <rect class="room" x="50" y="75" width="160" height="120"/>
+        <text class="room-label" x="130" y="100">Kitchen</text>
+        <text class="sensor-tag" x="105" y="148">T1</text>
+        <text class="sensor-tag" x="155" y="148">RH_1</text>
+        <text class="sensor-tag" x="130" y="172" style="font-size:9px;fill:#4A5159;">temp + humidity</text>
+      </g>
+
+      <g data-sensors="T2,RH_2" data-room="Living room">
+        <rect class="room" x="210" y="75" width="160" height="120"/>
+        <text class="room-label" x="290" y="100">Living room</text>
+        <text class="sensor-tag" x="265" y="148">T2</text>
+        <text class="sensor-tag" x="315" y="148">RH_2</text>
+        <text class="sensor-tag" x="290" y="172" style="font-size:9px;fill:#4A5159;">strongest indoor corr.</text>
+      </g>
+
+      <g data-sensors="T4,RH_4" data-room="Office">
+        <rect class="room" x="370" y="75" width="170" height="120"/>
+        <text class="room-label" x="455" y="100">Office</text>
+        <text class="sensor-tag" x="425" y="148">T4</text>
+        <text class="sensor-tag" x="485" y="148">RH_4</text>
+      </g>
+
+      <!-- Row 2: Laundry | Bathroom | Ironing -->
+      <g data-sensors="T3,RH_3" data-room="Laundry">
+        <rect class="room" x="50" y="195" width="160" height="115"/>
+        <text class="room-label" x="130" y="220">Laundry</text>
+        <text class="sensor-tag" x="105" y="265">T3</text>
+        <text class="sensor-tag" x="155" y="265">RH_3</text>
+      </g>
+
+      <g data-sensors="T5,RH_5" data-room="Bathroom">
+        <rect class="room" x="210" y="195" width="160" height="115"/>
+        <text class="room-label" x="290" y="220">Bathroom</text>
+        <text class="sensor-tag" x="265" y="265">T5</text>
+        <text class="sensor-tag" x="315" y="265">RH_5</text>
+      </g>
+
+      <g data-sensors="T7,RH_7" data-room="Ironing room">
+        <rect class="room" x="370" y="195" width="170" height="115"/>
+        <text class="room-label" x="455" y="220">Ironing room</text>
+        <text class="sensor-tag" x="425" y="265">T7</text>
+        <text class="sensor-tag" x="485" y="265">RH_7</text>
+      </g>
+
+      <!-- Row 3: Parents | Teen2 | (energy meter) -->
+      <g data-sensors="T9,RH_9" data-room="Parents room">
+        <rect class="room" x="50" y="310" width="160" height="120"/>
+        <text class="room-label" x="130" y="335">Parents</text>
+        <text class="sensor-tag" x="105" y="385">T9</text>
+        <text class="sensor-tag" x="155" y="385">RH_9</text>
+      </g>
+
+      <g data-sensors="T8,RH_8" data-room="Teenager room 2">
+        <rect class="room" x="210" y="310" width="160" height="120"/>
+        <text class="room-label" x="290" y="335">Teen room 2</text>
+        <text class="sensor-tag" x="265" y="385">T8</text>
+        <text class="sensor-tag" x="315" y="385">RH_8</text>
+      </g>
+
+      <!-- Energy meter -->
+      <g data-sensors="Appliances" data-room="Main appliance meter (target)">
+        <rect class="meter" x="370" y="310" width="170" height="120" rx="4"/>
+        <text class="meter-text" x="455" y="338">⚡ Appliance Meter</text>
+        <text class="meter-text" x="455" y="362"
+              style="font-size:22px; font-family:Consolas,monospace;">
+          Wh / 10 min
+        </text>
+        <text class="meter-text" x="455" y="395"
+              style="font-size:10px; font-weight:400; fill:#4A5159;">
+          TARGET to predict
+        </text>
+      </g>
+
+      <!-- Lights meter (below appliance) -->
+      <g data-sensors="lights" data-room="Light meter">
+        <rect class="meter" x="50" y="445" width="490" height="40" rx="3" fill="#FFE9B0"/>
+        <text class="meter-text" x="295" y="470">💡 Light meter (lights) — also recorded</text>
+      </g>
+
+      <!-- ── Outside / north side ── -->
+      <g data-sensors="T6,RH_6" data-room="Outside (north side)">
+        <rect class="room outside" x="555" y="75" width="150" height="120"/>
+        <text class="room-label" x="630" y="100" style="fill:#001F4E;">Outside</text>
+        <text class="room-label" x="630" y="116" style="font-size:10px; font-weight:400; fill:#4A5159;">
+          (north of building)
+        </text>
+        <text class="sensor-tag" x="605" y="160">T6</text>
+        <text class="sensor-tag" x="655" y="160">RH_6</text>
+      </g>
+
+      <!-- Chievres airport weather (separate box) -->
+      <g data-sensors="T_out,RH_out,Press_mm_hg,Windspeed,Visibility,Tdewpoint"
+         data-room="Chievres airport (outdoor weather station)">
+        <rect class="room outside" x="555" y="200" width="150" height="280"/>
+        <text class="room-label" x="630" y="225" style="fill:#001F4E;">Chievres airport</text>
+        <text class="room-label" x="630" y="241"
+              style="font-size:10px; font-weight:400; fill:#4A5159;">
+          (nearest weather stn)
+        </text>
+        <text class="sensor-tag" x="630" y="275">T_out</text>
+        <text class="sensor-tag" x="630" y="295">RH_out</text>
+        <text class="sensor-tag" x="630" y="315">Press_mm_hg</text>
+        <text class="sensor-tag" x="630" y="335">Windspeed</text>
+        <text class="sensor-tag" x="630" y="355">Visibility</text>
+        <text class="sensor-tag" x="630" y="375">Tdewpoint</text>
+        <text class="sensor-tag" x="630" y="412" style="font-size:9px; font-style:italic; fill:#4A5159;">
+          merged via timestamp
+        </text>
+      </g>
+
+      <!-- rv1/rv2 random noise -->
+      <g data-sensors="rv1,rv2" data-room="Synthetic random columns">
+        <rect class="room" x="555" y="497" width="150" height="38"
+              fill="#F4F4F4" stroke-dasharray="4,3"/>
+        <text class="room-label" x="630" y="514" style="font-size:11px;">
+          rv1, rv2
+        </text>
+        <text class="sensor-tag" x="630" y="528"
+              style="font-size:9px; font-style:italic; fill:#4A5159;">
+          random noise (authors)
+        </text>
+      </g>
+    </svg>
+
+    <div class="legend">
+      <strong>How to use:</strong>
+      hover or click any room / sensor box to see its statistics and correlation
+      with the target on the right.
+      <br>
+      <span class="swatch" style="background:#F7F1E2"></span> indoor sensor &nbsp;
+      <span class="swatch" style="background:#DBE6F5"></span> outdoor sensor &nbsp;
+      <span class="swatch" style="background:#FFB81C"></span> energy / light meter
+    </div>
+  </div>
+
+  <!-- ── Right: info panel ── -->
+  <div class="info-panel">
+    <h2>Sensor Inspector</h2>
+    <div id="info">
+      <p style="color:#54585A; font-size:13px;">
+        Click any sensor box on the floor plan to see its statistics, range,
+        and correlation with the prediction target (<code>Appliances</code>).
+      </p>
+    </div>
+
+    <div class="ranking">
+      <h3>Top correlated with Appliances</h3>
+      <ol id="ranking-list"></ol>
+    </div>
+
+    <a href="index.html" class="nav-back">← Back to full report</a>
+  </div>
+</div>
+
+<!-- ── Time-series chart ── -->
+<div id="timeseries">
+  <h2>One week of real data (last week of training set)</h2>
+  <div id="ts-plot"></div>
+</div>
+
+<footer>
+  CS 228 Final Project · Yiyang Chen ·
+  <a href="https://github.com/cyy-07/UCR-CS228-Project" target="_blank">github.com/cyy-07/UCR-CS228-Project</a>
+</footer>
+
+<script>
+const S = window.SENSORS;     // {name → {mean,std,min,max,corr_appliances,location}}
+const TS = window.TIMESERIES_WEEK;
+
+/* ── Sensor ranking by |corr| ── */
+const ranked = Object.entries(S)
+  .filter(([k]) => k !== 'Appliances')
+  .sort(([,a],[,b]) => Math.abs(b.corr_appliances) - Math.abs(a.corr_appliances))
+  .slice(0, 8);
+const rankUl = document.getElementById('ranking-list');
+ranked.forEach(([k, v]) => {
+  const li = document.createElement('li');
+  li.innerHTML = `<code>${k}</code>  r=${v.corr_appliances >= 0 ? '+' : ''}${v.corr_appliances.toFixed(3)}
+                  <span style="color:#54585A;font-size:11px;">${v.location}</span>`;
+  rankUl.appendChild(li);
+});
+
+/* ── Click handling on house regions ── */
+function inspect(name, roomLabel) {
+  if (!S[name]) return;
+  const s = S[name];
+  const corrPct = Math.abs(s.corr_appliances) * 100;
+  const corrSign = s.corr_appliances >= 0 ? '+' : '-';
+  document.getElementById('info').innerHTML = `
+    <div class="selected-room">${roomLabel}</div>
+    <div class="selected-name">${name}</div>
+    <table>
+      <tr><td>mean</td>          <td>${s.mean}</td></tr>
+      <tr><td>std</td>           <td>${s.std}</td></tr>
+      <tr><td>min</td>           <td>${s.min}</td></tr>
+      <tr><td>max</td>           <td>${s.max}</td></tr>
+      <tr><td>Pearson r vs Appliances</td>
+                                  <td>${corrSign}${Math.abs(s.corr_appliances).toFixed(3)}</td></tr>
+    </table>
+    <div class="corr-bar"><div style="width:${corrPct}%;"></div></div>
+    <div class="corr-caption">|r| × 100 — closer to right = more useful as predictor</div>
+  `;
+  // refresh time-series with this sensor (if in TS)
+  if (TS[name]) drawTS(name);
+}
+
+/* Highlight + click handlers */
+document.querySelectorAll('svg g[data-sensors]').forEach(g => {
+  const sensors = g.dataset.sensors.split(',');
+  const room = g.dataset.room;
+  g.style.cursor = 'pointer';
+  g.addEventListener('click', () => {
+    document.querySelectorAll('.room.active, .meter.active').forEach(
+      el => el.classList.remove('active'));
+    document.querySelectorAll('.sensor-tag.active').forEach(
+      el => el.classList.remove('active'));
+    const shape = g.querySelector('rect');
+    if (shape) shape.classList.add('active');
+    g.querySelectorAll('.sensor-tag').forEach(t => t.classList.add('active'));
+    // Use first sensor in the group for stats; if a group has many we average corr
+    inspect(sensors[0], room);
+  });
+});
+
+/* ── Time-series plot ── */
+function drawTS(sensor) {
+  const traces = [
+    {
+      x: TS.date, y: TS.Appliances, name: 'Appliances (target)',
+      yaxis: 'y2', line: { color: '#001F4E', width: 1.6 },
+      hovertemplate: 'Appliances: %{y:.0f} Wh<extra></extra>',
+    },
+  ];
+  if (TS[sensor] && sensor !== 'Appliances') {
+    traces.unshift({
+      x: TS.date, y: TS[sensor], name: sensor,
+      line: { color: '#FFB81C', width: 1.8 },
+      hovertemplate: sensor + ': %{y:.2f}<extra></extra>',
+    });
+  }
+  Plotly.newPlot('ts-plot', traces, {
+    title: { text: '7-day window — ' + sensor + ' vs Appliances',
+             font: { color: '#001F4E', size: 14 } },
+    plot_bgcolor: '#F5F5F5', paper_bgcolor: 'white',
+    xaxis: { gridcolor: '#E5E8EC' },
+    yaxis: { title: sensor, gridcolor: '#E5E8EC' },
+    yaxis2: { title: 'Appliances (Wh)', overlaying: 'y', side: 'right',
+              gridcolor: 'transparent' },
+    legend: { orientation: 'h', y: 1.12 },
+    margin: { l: 60, r: 60, t: 60, b: 50 },
+    hovermode: 'x unified',
+  }, { displayModeBar: false, responsive: true });
+}
+drawTS('T1');     // initial: kitchen T1
+</script>
+
+</body>
+</html>

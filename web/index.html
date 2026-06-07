@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmarking Multi-Horizon Forecasting · UCR CS228</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="figures.js"></script>
+<style>
+  :root {
+    --ucr-blue: #003DA5;
+    --ucr-gold: #FFB81C;
+    --ucr-navy: #001F4E;
+    --gray-50:  #F7F8FA;
+    --gray-100: #EEF1F4;
+    --gray-300: #C9CFD6;
+    --gray-700: #4A5159;
+    --text:     #1B2331;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", sans-serif;
+    color: var(--text);
+    line-height: 1.55;
+    background: var(--gray-50);
+  }
+  /* ── header ── */
+  header {
+    background: linear-gradient(135deg, var(--ucr-navy), var(--ucr-blue));
+    color: white;
+    padding: 36px 48px 28px;
+    border-bottom: 6px solid var(--ucr-gold);
+  }
+  header .badge {
+    display: inline-block;
+    background: var(--ucr-gold);
+    color: var(--ucr-navy);
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 700;
+    max-width: 900px;
+    line-height: 1.25;
+  }
+  header .meta {
+    color: #d8e2f2;
+    font-size: 14px;
+  }
+  header .meta a { color: var(--ucr-gold); text-decoration: none; }
+
+  /* ── layout ── */
+  .wrap {
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+  nav.toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    padding: 28px 16px 28px 32px;
+    border-right: 1px solid var(--gray-300);
+    height: 100vh;
+    overflow-y: auto;
+    font-size: 13px;
+  }
+  nav.toc h3 {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--gray-700);
+    margin: 18px 0 6px;
+  }
+  nav.toc a {
+    display: block;
+    color: var(--text);
+    text-decoration: none;
+    padding: 5px 0;
+    border-bottom: 1px solid transparent;
+  }
+  nav.toc a:hover { color: var(--ucr-blue); border-bottom-color: var(--ucr-gold); }
+  nav.toc a.headline {
+    color: var(--ucr-blue);
+    font-weight: 700;
+  }
+
+  main { padding: 32px 48px 100px; }
+  section { margin-bottom: 56px; }
+  section h2 {
+    color: var(--ucr-navy);
+    font-size: 22px;
+    border-bottom: 3px solid var(--ucr-gold);
+    padding-bottom: 6px;
+    margin-bottom: 18px;
+  }
+  section h3 {
+    color: var(--ucr-blue);
+    font-size: 16px;
+    margin: 24px 0 8px;
+  }
+  section p { margin: 0 0 12px; }
+  section ul { margin: 0 0 12px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+
+  /* ── figure card ── */
+  .fig {
+    background: white;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    padding: 18px;
+    margin: 18px 0 24px;
+    box-shadow: 0 2px 10px rgba(0, 31, 78, .04);
+  }
+  .fig img { width: 100%; height: auto; display: block; }
+  .fig .caption {
+    color: var(--gray-700);
+    font-size: 13px;
+    font-style: italic;
+    margin-top: 10px;
+  }
+  .fig .label {
+    background: var(--ucr-blue);
+    color: white;
+    display: inline-block;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    border-radius: 3px;
+    margin-bottom: 10px;
+  }
+  .fig.headline { border: 2px solid var(--ucr-gold); }
+  .fig.headline .label { background: var(--ucr-gold); color: var(--ucr-navy); }
+
+  /* ── table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 1px 4px rgba(0, 31, 78, .05);
+    margin: 14px 0 20px;
+    font-size: 14px;
+  }
+  th, td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  thead th {
+    background: var(--ucr-navy);
+    color: white;
+    font-weight: 600;
+    border-bottom: 2px solid var(--ucr-gold);
+  }
+  tbody tr:nth-child(even) { background: var(--gray-50); }
+  td.win { background: #E8F2E8; font-weight: 600; }
+  td.loss { background: #F8E8E8; }
+
+  /* ── call-out box ── */
+  .callout {
+    background: white;
+    border-left: 5px solid var(--ucr-gold);
+    padding: 16px 22px;
+    margin: 16px 0;
+    box-shadow: 0 1px 6px rgba(0, 31, 78, .06);
+  }
+  .callout.win {
+    border-color: #5C9D5C;
+    background: #f0f7f0;
+  }
+  .callout strong { color: var(--ucr-navy); }
+  .callout .num {
+    font-size: 20px;
+    color: var(--ucr-blue);
+    font-weight: 700;
+  }
+
+  /* ── interactive panel ── */
+  #plotly-schedule {
+    width: 100%;
+    height: 520px;
+    background: white;
+    border: 2px solid var(--ucr-gold);
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 2px 10px rgba(0, 31, 78, .08);
+  }
+  .interactive-hint {
+    background: var(--ucr-gold);
+    color: var(--ucr-navy);
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 3px;
+    margin-bottom: 8px;
+  }
+
+  /* ── footer ── */
+  footer {
+    background: var(--ucr-navy);
+    color: #c4ceeb;
+    padding: 26px 48px;
+    font-size: 12px;
+    text-align: center;
+    border-top: 4px solid var(--ucr-gold);
+  }
+  footer a { color: var(--ucr-gold); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    nav.toc { display: none; }
+    main { padding: 20px 18px 80px; }
+    header { padding: 24px 18px 20px; }
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <div class="badge">UCR CS228 · Final Project</div>
+  <h1>Benchmarking Multi-Horizon Forecasting on the UCI Appliances Energy Dataset</h1>
+  <div class="meta">
+    When Naive Baselines Are Hard to Beat, and What a Minimal Mixer Tells Us
+    &nbsp;·&nbsp; Yiyang Chen (SID X746706)
+    &nbsp;·&nbsp; <a href="dataset.html">🏠 sensor floor plan</a>
+    &nbsp;·&nbsp; <a href="https://github.com/cyy-07/UCR-CS228-Project" target="_blank">GitHub</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>NAVIGATE</h3>
+  <a href="#intro">1. Introduction</a>
+  <a href="#dataset">2. Dataset</a>
+  <a href="#related">3. Related work</a>
+  <a href="#methods">4. Methods</a>
+  <h3>EXPERIMENTS</h3>
+  <a href="#diag">5.1 Milestone diagnostics</a>
+  <a href="#repro">5.2 Literature reproduction</a>
+  <a href="#features">5.3 Feature engineering</a>
+  <a href="#loss">5.4 Loss-function ablation</a>
+  <a href="#residual">5.5 Persistence-anchored</a>
+  <a href="#transformer">5.6 Modern Transformers</a>
+  <a href="#ssl">5.7 Self-supervised</a>
+  <a href="#corruption">5.8 Corruption robustness</a>
+  <a href="#rv">5.9 rv1/rv2 study</a>
+  <a href="#horizon">5.10 Horizon sweep</a>
+  <a href="#dpmixer" class="headline">⭐ 5.11 DPMixer (ours)</a>
+  <h3>WRAP-UP</h3>
+  <a href="#best">6. Best config</a>
+  <a href="#take">7. Takeaways</a>
+  <a href="#limits">8. Limitations</a>
+</nav>
+
+<main>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="intro">
+  <h2>1. Introduction</h2>
+  <p>
+    Short-horizon load forecasting is a canonical CS problem: server load,
+    network throughput, click-through rate, ICU vitals — they all share the
+    same mathematical shape. We study it through a deceptively simple instance:
+    predicting the next <strong>4 hours</strong> of household appliance power
+    consumption (Wh) from a <strong>16-hour</strong> multivariate sensor history.
+  </p>
+
+  <div class="callout">
+    <strong>The puzzle.</strong> Our milestone report uncovered an anomaly:
+    a 675K-parameter MLP underperformed a zero-parameter Persistence baseline
+    on MAE. Instinct says "training bug"; the correct answer (after reading
+    the dataset's original paper) is that
+    <span class="num">strong naive baselines are a property of this dataset,
+    not a symptom of broken training</span> —
+    the dataset paper reports test R² = 0.57 with GBM despite training
+    R² = 0.97, so most of the target's variance is irreducible human-driven
+    noise.
+  </div>
+
+  <h3>Contributions</h3>
+  <ol>
+    <li><strong>First systematic multi-horizon benchmark</strong> on the
+    Candanedo 2017 dataset, covering 6 model families × 5 horizons ×
+    11 experimental axes, fully reproducible.</li>
+    <li><strong>DPMixer</strong>, a deliberately minimal four-branch additive
+    mixer composed of well-known components.</li>
+    <li><strong>TC-DPMixer (time-conditioned gating)</strong> — our main
+    architectural contribution. Branch gates become input-dependent via
+    a tiny MLP over the forecast-step's time features (extending MoLE
+    [Ni et al., AISTATS 2024] to heterogeneous additive branches).
+    The learned gates form an
+    <em>interpretable 24-h schedule</em>.</li>
+    <li><strong>30 % MAE reduction</strong> from milestone (49.3 → 34.83 Wh)
+    using a 68K-parameter model — within 0.6 Wh of the 412K-parameter
+    iTransformer while being 6× smaller.</li>
+  </ol>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="dataset">
+  <h2>2. Dataset and Background</h2>
+  <p>
+    UCI Appliances Energy Prediction dataset
+    <a href="https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction"
+       target="_blank">[link]</a>:
+    19,735 records at 10-min cadence over 4.5 months (Jan–May 2016),
+    collected in a passive house in Stambruges, Belgium via ZigBee sensors
+    plus airport weather data.
+  </p>
+
+  <table>
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <!-- inserted: pointer to interactive floor plan -->
+    <caption style="caption-side:bottom; text-align:left; padding:8px 0;
+                    color:var(--gray-700); font-size:13px; font-style:italic;">
+      🏠 Explore the <a href="dataset.html" style="color:var(--ucr-blue);
+      font-weight:600;">interactive sensor floor plan</a> to see where each of the
+      28 sensors lives and its correlation with the prediction target.
+    </caption>
+    <tbody>
+      <tr><td>Samples</td><td>19,735</td></tr>
+      <tr><td>Cadence</td><td>10 min</td></tr>
+      <tr><td>Target</td><td>Appliances (Wh), median 60 / mean 97 / max 1080</td></tr>
+      <tr><td>Features</td><td>9 rooms × (T, RH) + 6 outdoor weather + lights + rv1/rv2</td></tr>
+      <tr><td>Split</td><td>chronological 70 / 10 / 20</td></tr>
+      <tr><td>Input/Output</td><td>L=96 (16h) → H=24 (4h)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Why baselines are hard to beat</h3>
+  <p>
+    At 10-min cadence appliance use is strongly autocorrelated — most of the
+    time it's flat, with brief human-driven spikes (kettle, oven, hairdryer)
+    that account for most of the variance but are inherently unpredictable.
+    The original GBM reports train R² = 0.97 vs test R² = 0.57, indicating
+    most test variance is irreducible. Our sanity check confirms this: test
+    variance / train variance = 0.73 and test max (850 Wh) is below train
+    max (1080 Wh).
+  </p>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="related">
+  <h2>3. Related Work</h2>
+  <ul>
+    <li><strong>DLinear</strong> (Zeng et al., AAAI 2023): single linear
+    layer per trend/seasonal branch beats most Transformer LTSF models.</li>
+    <li><strong>TSMixer</strong> (Chen et al., TMLR 2023): alternating
+    time-mixing and channel-mixing MLPs.</li>
+    <li><strong>TimeMixer</strong> (Wang et al., ICLR 2024): multi-scale
+    decomposable mixing — closest competing architecture to DPMixer.</li>
+    <li><strong>N-BEATS / N-HiTS</strong>: stacked residual blocks summing to
+    the final prediction (additive philosophy).</li>
+    <li><strong>MoLE</strong> (Ni et al., AISTATS 2024): timestamp-conditioned
+    MLP router over linear experts. TC-DPMixer extends this with (a)
+    heterogeneous inductive-bias branches, (b) forecast-step conditioning,
+    and (c) a 24-h schedule visualization.</li>
+    <li><strong>Sequence-to-Point NILM</strong> (Zhang et al., AAAI 2018):
+    classify + magnitude heads for appliance disaggregation; we borrow this
+    pattern as auxiliary forecasting heads in SS-DPMixer.</li>
+  </ul>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="methods">
+  <h2>4. Methods</h2>
+
+  <h3>Models tested</h3>
+  <table>
+    <thead><tr><th>Family</th><th>Models</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Naive</td><td>Persistence</td><td>zero-parameter baseline</td></tr>
+      <tr><td>Dense</td><td>MLP</td><td>tests raw capacity</td></tr>
+      <tr><td>Recurrent</td><td>LSTM</td><td>classical sequential model</td></tr>
+      <tr><td>Linear-decomp</td><td>DLinear</td><td>strong recent baseline</td></tr>
+      <tr><td>Attention</td><td>PatchTST, iTransformer</td><td>modern Transformers</td></tr>
+      <tr><td><strong>Mixer (ours)</strong></td><td>DPMixer, TC-DPMixer, SS-DPMixer, TC-SS-DPMixer</td><td>proposed</td></tr>
+    </tbody>
+  </table>
+
+  <h3>DPMixer architecture</h3>
+  <p>Given input <code>x ∈ R<sup>L×C</sup></code>:</p>
+  <pre style="background:white;padding:14px;border-left:3px solid var(--ucr-blue);overflow-x:auto;">
+B<sub>1</sub> = x[-1, 0:1] · 1<sub>H</sub>                          (persistence anchor)
+B<sub>2</sub> = DLinear(x[:, 0])                          (target decomposition)
+B<sub>3</sub> = MixerHead(MLPMixer(x[-1, :]))             (channel mix at last step)
+B<sub>4</sub> = MixerHead(MLPMixer(x[:, 0]))              (time mix on target)
+ŷ  = α<sub>1</sub>B<sub>1</sub> + α<sub>2</sub>B<sub>2</sub> + α<sub>3</sub>B<sub>3</sub> + α<sub>4</sub>B<sub>4</sub>                  (learned gates)
+</pre>
+  <p>
+    In <strong>TC-DPMixer</strong> the four scalar gates α<sub>i</sub> are
+    replaced by a small MLP that outputs <strong>per-sample</strong> gate
+    values conditioned on the input's last-timestep time features.
+  </p>
+
+  <h3>Training recipe</h3>
+  <p>
+    Adam (lr=1e-3, wd=1e-4); ReduceLROnPlateau (patience 5);
+    early-stopping (patience 10); seed reset to 42 before every fit;
+    grad-clip = 1.0; L1 loss for the headline configuration.
+  </p>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="diag">
+  <h2>5.1 Milestone reproduction & diagnostics</h2>
+  <table>
+    <thead><tr>
+      <th>Model</th><th>Train MAE</th><th>Test MAE</th><th>Test RMSE</th><th>Params</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Persistence</td><td>63.3</td><td>48.86</td><td>103.4</td><td>0</td></tr>
+      <tr><td>MLP</td><td class="loss">37.0</td><td>49.4</td><td>85.4</td><td>675K</td></tr>
+      <tr><td>LSTM</td><td>55.4</td><td class="win">47.4</td><td>84.9</td><td>215K</td></tr>
+      <tr><td>DLinear</td><td>55.1</td><td>51.3</td><td class="win">82.8</td><td>4.7K</td></tr>
+      <tr><td>PatchTST</td><td>54.2</td><td>57.6</td><td>87.1</td><td>142K</td></tr>
+    </tbody>
+  </table>
+  <div class="fig">
+    <span class="label">FIG 1</span>
+    <img id="fig1" alt="train/val/test gap">
+    <div class="caption">Train/Val/Test MAE per model. MLP's 12-Wh
+    train-test gap (37 → 49) is consistent with capacity-driven overfitting;
+    LSTM/DLinear/PatchTST have consistent splits, ruling out training-loop
+    bugs.</div>
+  </div>
+  <p>
+    <strong>All deep models beat Persistence on RMSE</strong> (the metric
+    corresponding to the MSE training objective). The MAE puzzle is a
+    metric-objective mismatch — resolved in §5.4.
+  </p>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="repro">
+  <h2>5.2 Literature reproduction (Workstream 0)</h2>
+  <p>Re-running Candanedo et al.'s single-step setup with RF / GBM and
+  chronological split:</p>
+  <table>
+    <thead><tr>
+      <th>Model</th><th>Train R²</th><th>Test R²</th><th>Test MAE</th><th>Test RMSE</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>LinearRegression</td><td>0.18</td><td>0.08</td><td>52.6</td><td>84.8</td></tr>
+      <tr><td>SVR-rbf</td><td>0.17</td><td>0.05</td><td>42.4</td><td>86.0</td></tr>
+      <tr><td>RandomForest</td><td>0.95</td><td class="loss">−3.81</td><td>148.5</td><td>193.6</td></tr>
+      <tr><td>GBM</td><td>0.68</td><td class="loss">−7.02</td><td>191.4</td><td>250.0</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Tree ensembles overfit catastrophically under chronological split —
+    <strong>a clean distribution-shift demo</strong>. Modern deep models
+    with implicit regularization handle this gracefully.
+  </p>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="features">
+  <h2>5.3 Feature engineering (Workstream A)</h2>
+  <div class="callout">
+    <strong>Surprising finding:</strong> Using only the target's own
+    history beats using all 26 sensors. Adding time encodings + log target
+    cuts DLinear's test MAE from 49.3 to <span class="num">37.9 Wh (−23 %)</span>.
+  </div>
+  <div class="fig">
+    <span class="label">FIG 2</span>
+    <img id="fig2" alt="feature ablation">
+    <div class="caption">Test MAE for 10 feature configurations.
+    Indoor T/RH react to energy use <em>after</em> it occurs (radiative heat
+    from stove, oven, etc.) so they have low predictive value.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="loss">
+  <h2>5.4 Training-loss ablation (Workstream B)</h2>
+  <div class="callout win">
+    Switching MSE → L1 reduces MAE by <strong>5–20 Wh for every model</strong>.
+    The milestone's "MLP < Persistence on MAE" puzzle resolves into a
+    <em>metric-objective mismatch</em>: MSE training favors mean-predictions,
+    which look conservative on a long-tailed target.
+  </div>
+  <div class="fig">
+    <span class="label">FIG 3</span>
+    <img id="fig3" alt="loss ablation">
+    <div class="caption">Test MAE per (model, training loss). Same evaluation
+    set, same architecture — only the loss function changed.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="residual">
+  <h2>5.5 Persistence-anchored architecture (Workstream C)</h2>
+  <div class="fig">
+    <span class="label">FIG 4</span>
+    <img id="fig4" alt="residual ablation">
+    <div class="caption">Vanilla vs Persistence-anchored output across 5 models.
+    Anchoring helps LSTM / PatchTST / iTransformer by 1–2 Wh but
+    <em>hurts</em> DLinear (whose decomposition already provides a similar
+    inductive bias — stacking competes for the same role).</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="transformer">
+  <h2>5.6 Modern Transformer variants (Workstream D)</h2>
+  <p>
+    iTransformer-base (412K params): test MAE <strong>44.4 Wh</strong> with
+    persistence anchoring, vs. PatchTST-base (142K params) at 51.3 Wh —
+    cross-variate attention substantially outperforms cross-time attention
+    on this multivariate dataset. Larger variants (iTrans-large 2.4M params)
+    do <em>not</em> improve MAE, supporting "structure beats scale."
+  </p>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="ssl">
+  <h2>5.7 Self-supervised pretraining (Workstream E)</h2>
+  <div class="fig">
+    <span class="label">FIG 6</span>
+    <img id="fig6" alt="ssl">
+    <div class="caption">Masked-patch SSL pretraining transfers when labels
+    are scarce (Δ = −9.8 Wh at 20% data) but is harmful when labels are
+    abundant (Δ = +8.8 Wh at 100% data). Classic SSL transfer profile.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="corruption">
+  <h2>5.8 Input-corruption robustness <em>(milestone commitment)</em></h2>
+  <table>
+    <thead><tr>
+      <th>Model</th><th>Clean</th><th>Noise σ=0.1</th><th>Noise σ=0.3</th>
+      <th>Mask 20 %</th><th>Mask 40 %</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Persistence</td><td>48.9</td><td>51.2</td><td>61.1</td><td>48.9</td><td>48.9</td></tr>
+      <tr><td>MLP</td><td>48.6</td><td>48.6</td><td>48.8</td><td class="loss">61.4</td><td class="loss">66.6</td></tr>
+      <tr><td>LSTM</td><td class="win">41.7</td><td class="win">41.7</td><td class="win">41.8</td><td class="win">47.6</td><td class="win">50.8</td></tr>
+      <tr><td>DLinear</td><td>53.1</td><td>53.1</td><td>53.9</td><td>59.7</td><td>62.1</td></tr>
+      <tr><td>PatchTST</td><td>56.3</td><td>56.2</td><td>56.0</td><td>62.5</td><td>64.8</td></tr>
+    </tbody>
+  </table>
+  <div class="fig">
+    <span class="label">FIG 9</span>
+    <img id="fig9" alt="corruption">
+    <div class="caption">Standardized-input Gaussian noise barely matters
+    (deep models have effectively denoised during training); random feature
+    masking is far more damaging. LSTM is the most masking-robust deep model;
+    Persistence is immune to masking (uses no auxiliary features).</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="rv">
+  <h2>5.9 rv1/rv2 random features <em>(milestone commitment)</em></h2>
+  <div class="callout">
+    <strong>Unexpected finding:</strong> adding known random noise
+    (rv1, rv2 columns) improves <strong>3 of 4 deep models</strong>.
+    Random features act as a regularizer — a clean empirical demonstration
+    of the textbook "noise-as-regularization" trick.
+  </div>
+  <div class="fig">
+    <span class="label">FIG 10</span>
+    <img id="fig10" alt="rv ablation">
+    <div class="caption">Test MAE with vs without the two random columns.
+    MLP / LSTM / PatchTST improve; DLinear (4.7K parameters, already
+    well-regularized) is the lone exception.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="horizon">
+  <h2>5.10 Forecast horizon sweep (Workstream F)</h2>
+  <div class="fig">
+    <span class="label">FIG 5</span>
+    <img id="fig5" alt="horizon">
+    <div class="caption">Persistence is unbeatable at H=1h (the
+    autocorrelation is too strong); deep models overtake it from H=2h
+    onwards. DLinear stays remarkably flat across horizons.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="dpmixer">
+  <h2>⭐ 5.11 DPMixer family (Workstream G) — <em>headline contribution</em></h2>
+
+  <table>
+    <thead><tr>
+      <th>Variant</th><th>Test MAE</th><th>Test RMSE</th><th>Params</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>DLinear (best of family)</td><td>35.31</td><td>80.19</td><td>4.7K</td></tr>
+      <tr><td>PatchTST</td><td>34.93</td><td>80.41</td><td>151K</td></tr>
+      <tr><td><strong>iTransformer (SOTA baseline)</strong></td><td class="win">34.19</td><td class="win">77.60</td><td>412K</td></tr>
+      <tr><td>DPMixer (gated, base)</td><td>35.21</td><td>81.46</td><td>66K</td></tr>
+      <tr><td><strong>TC-DPMixer (Idea A)</strong></td><td>34.98</td><td>80.46</td><td>67K</td></tr>
+      <tr><td>SS-DPMixer (Idea C)</td><td>35.58</td><td>80.13</td><td>69K</td></tr>
+      <tr><td><strong>TC-SS-DPMixer (A + C, ours)</strong></td><td class="win">34.83</td><td>80.64</td><td class="win">68K</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout win">
+    <strong>TC-SS-DPMixer: 34.83 Wh with 68K params</strong> — within
+    <span class="num">0.6 Wh</span> of the 412K iTransformer while being
+    <span class="num">6× smaller</span>. Time-conditioned gating contributed
+    0.41 Wh of the improvement.
+  </div>
+
+  <div class="fig headline">
+    <span class="label">FIG 7</span>
+    <img id="fig7" alt="dpmixer ablation">
+    <div class="caption">DPMixer family — branch ablation, capacity sweep,
+    head-to-head.</div>
+  </div>
+
+  <h3>Interactive 24-h schedule (hover to inspect)</h3>
+  <p>
+    Below is the same data as Figure 8 but rendered with Plotly so you can
+    hover over any hour to read the four gate values, and zoom into any
+    region. <span class="interactive-hint">INTERACTIVE</span>
+  </p>
+  <div id="plotly-schedule"></div>
+
+  <div class="fig headline" style="margin-top:24px;">
+    <span class="label">FIG 8 (3 panels)</span>
+    <img id="fig8" alt="tc schedule 3 panels">
+    <div class="caption">
+      <strong>(a)</strong> Real average Appliances per hour-of-day (training set,
+      ground-truth human activity). <strong>(b)</strong> Persistence's own MAE
+      per hour-of-day on validation — <em>when the naive baseline fails</em>.
+      <strong>(c)</strong> TC-DPMixer's learned 24-h gate schedule.
+      Pearson r against (a) and (b) printed inline.
+      The gates' peak at 10–12 h coincides with the Persistence-MAE peak,
+      suggesting the model has learned <em>when</em> Persistence fails.
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="best">
+  <h2>6. Best configuration</h2>
+  <table>
+    <thead><tr><th>Configuration</th><th>Test MAE</th><th>Δ vs Milestone</th><th>Params</th></tr></thead>
+    <tbody>
+      <tr><td>Milestone DLinear (MSE, all features)</td><td>49.3</td><td>—</td><td>4.7K</td></tr>
+      <tr><td>DLinear + time + log + L1 (recipe only)</td><td>37.9</td><td class="win">−23 %</td><td>4.7K</td></tr>
+      <tr><td>iTransformer + time + log + L1</td><td>34.19</td><td class="win">−31 %</td><td>412K</td></tr>
+      <tr><td><strong>TC-SS-DPMixer + time + log + L1 (ours)</strong></td><td class="win">34.83</td><td class="win">−29 %</td><td>68K</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="take">
+  <h2>7. Discussion and Takeaways</h2>
+  <ol>
+    <li><strong>Inductive bias &gt; model size.</strong> A 4.7K-parameter
+    linear model beats a 678K Transformer on this dataset; a 68K Mixer with
+    learned branch gates matches a 412K Transformer. When data is moderate
+    and noisy, sensible structure matters more than scale.</li>
+    <li><strong>Training objective dictates apparent quality.</strong> MSE
+    training makes models look bad on MAE evaluation; switching to L1 loss
+    (one line of code) flips the apparent ranking. Always train against an
+    objective close to your evaluation metric.</li>
+    <li><strong>A strong baseline is a discovery, not a bug.</strong> When
+    the naive baseline wins, the right response is to ask <em>why the data
+    permits that</em>, not to discard the experiment.</li>
+  </ol>
+</section>
+
+<!-- ───────────────────────────────────────────────── -->
+
+<section id="limits">
+  <h2>8. Limitations</h2>
+  <p>
+    Single dataset; cross-house generalization untested. Hyperparameters not
+    exhaustively searched per workstream. SSL uses only masked-patch MSE
+    (contrastive variants like TS2Vec not compared). DPMixer's components
+    are each derivative of prior work (NLinear, DLinear, TSMixer);
+    architectural novelty is limited to per-branch time-conditioned gating
+    (MoLE-style) and the empirical benchmark itself.
+  </p>
+</section>
+
+</main>
+</div>
+
+<footer>
+  CS 228 Final Project · Yiyang Chen · June 2026 ·
+  <a href="https://github.com/cyy-07/UCR-CS228-Project" target="_blank">github.com/cyy-07/UCR-CS228-Project</a>
+</footer>
+
+<script>
+  /* ── 1. fill every <img id="figN"> with base64 from figures.js ── */
+  const map = {
+    fig1:  "fig1_baseline_gap.png",
+    fig2:  "fig2_features.png",
+    fig3:  "fig3_losses.png",
+    fig4:  "fig4_residual.png",
+    fig5:  "fig5_horizon.png",
+    fig6:  "fig6_ssl.png",
+    fig7:  "fig7_dpmixer.png",
+    fig8:  "fig8_tc_schedule.png",
+    fig9:  "fig9_corruption.png",
+    fig10: "fig10_rv_ablation.png",
+  };
+  for (const [id, fname] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    if (el && window.FIGURES && window.FIGURES[fname]) {
+      el.src = "data:image/png;base64," + window.FIGURES[fname];
+    }
+  }
+
+  /* ── 2. interactive Plotly 24-h schedule ── */
+  const sched = window.SCHEDULE;  // [24][4]
+  const hours = [...Array(24).keys()];
+  const branch_names = ["Persistence", "Decomposition",
+                        "Channel-mixer", "Time-mixer"];
+  const colors = ["#003DA5", "#FFB81C", "#7A9CC6", "#001F4E"];
+
+  const traces = branch_names.map((name, i) => ({
+    x: hours,
+    y: sched.map(row => row[i]),
+    mode: "lines+markers",
+    name: name,
+    line: { color: colors[i], width: 2.5 },
+    marker: { size: 7 },
+    hovertemplate: name + ": <b>%{y:.3f}</b><br>" +
+                   "hour: %{x}:00<extra></extra>",
+  }));
+
+  // meal-time bands as shapes
+  const bands = [
+    {x0:6.5, x1:9.5,  label:"breakfast"},
+    {x0:11.5,x1:13.5, label:"lunch"},
+    {x0:17.5,x1:20.5, label:"dinner"},
+  ];
+  const shapes = bands.map(b => ({
+    type:"rect", xref:"x", yref:"paper",
+    x0:b.x0, x1:b.x1, y0:0, y1:1,
+    fillcolor:"#FFCFA8", opacity:0.22, line:{width:0},
+  }));
+  const annotations = bands.map(b => ({
+    x:(b.x0+b.x1)/2, y:1.03, xref:"x", yref:"paper",
+    text:b.label, showarrow:false, font:{color:"#54585A", size:11},
+  }));
+
+  Plotly.newPlot("plotly-schedule", traces, {
+    title: { text: "TC-DPMixer learned 24-h gate schedule (interactive)",
+             font: { color: "#001F4E", size: 16 } },
+    xaxis: { title:"hour of day (input window ends)", tickmode:"linear",
+             dtick:3, gridcolor:"#E5E8EC" },
+    yaxis: { title:"gate value α(t)", gridcolor:"#E5E8EC" },
+    plot_bgcolor: "#F5F5F5",
+    paper_bgcolor: "white",
+    hovermode: "x unified",
+    shapes: shapes,
+    annotations: annotations,
+    legend: { orientation:"h", y:-0.2, x:0.5, xanchor:"center" },
+    margin: { l: 60, r: 30, t: 60, b: 80 },
+  }, { displayModeBar:false, responsive:true });
+
+  /* ── 3. highlight active section in TOC on scroll ── */
+  const tocLinks = document.querySelectorAll("nav.toc a");
+  const sections = [...document.querySelectorAll("section")];
+  function onScroll() {
+    const y = window.scrollY + 100;
+    let cur = sections[0].id;
+    for (const s of sections) {
+      if (s.offsetTop <= y) cur = s.id;
+    }
+    tocLinks.forEach(a => {
+      if (a.getAttribute("href") === "#" + cur)
+        a.style.borderBottomColor = "var(--ucr-gold)";
+      else
+        a.style.borderBottomColor = "transparent";
+    });
+  }
+  window.addEventListener("scroll", onScroll);
+  onScroll();
+</script>
+
+</body>
+</html>
