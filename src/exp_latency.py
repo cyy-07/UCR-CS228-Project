@@ -1,17 +1,10 @@
 """
-src/exp_latency.py  —  Reviewer R4: defensible inference-latency claims.
+src/exp_latency.py  —  inference-latency benchmark.
 
 What it does
 ------------
-The old `exp_efficiency.py` measures latency with the test-loader's batch
-size (256) and a 5-warm-up / 30-timed loop, then divides by sample count.
-That number can't support "57× faster per window" in the abstract, because:
-  • per-sample latency on bs=256 hides serial overhead,
-  • 30 timed runs has noisy std,
-  • we never recorded GPU / CUDA / PyTorch / eager-vs-compiled.
-
-This script measures the right thing:
-  • two regimes: batch=1 (single-window deploy) and batch=32 (mini-batch),
+Per-window inference latency under two regimes:
+  • batch=1 (single-window deploy) and batch=32 (mini-batch),
   • 100 warm-up forwards followed by 1000 timed forwards,
   • full hardware/software metadata dumped to results/latency_meta.json,
   • per-model rows: mean / std / median / p99 of latency_ms_per_window.

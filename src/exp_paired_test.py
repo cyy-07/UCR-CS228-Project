@@ -1,5 +1,5 @@
 """
-src/exp_paired_test.py  —  Reviewer R3: defensible paired statistics.
+src/exp_paired_test.py  —  paired statistics for the headline pair.
 
 What it does
 ------------
@@ -10,11 +10,7 @@ SEEDS = [42..46] and writes a per-seed table. Then computes:
   * paired Wilcoxon signed-rank W and exact two-sided p
   * paired bootstrap 95 % CI on the mean difference (10 000 resamples)
   * paired Cohen's d   d = mean(diff) / sd(diff)
-  * unpaired pooled-σ ratio (what we previously called "4.85 σ"),
-    reported separately so the writer can compare and use the right one.
-
-The point of this script is that nothing in the report should be sourced
-to "4.85 σ" without the W / p / CI / d numbers next to it.
+  * unpaired pooled-σ ratio, reported separately for comparison.
 
 Run
 ---

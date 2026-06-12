@@ -1,5 +1,5 @@
 """
-src/exp_minimal.py  —  Reviewer R6: the "is the rest decoration?" check.
+src/exp_minimal.py  —  minimal-variant ablation.
 
 What it does
 ------------

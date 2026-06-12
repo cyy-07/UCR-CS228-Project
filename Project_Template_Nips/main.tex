@@ -1,0 +1,563 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2022
+
+
+% ready for submission
+\usepackage[preprint]{neurips_2022}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2022}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2022}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2022}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\newcommand{\new}[1]{{\color{red} #1}}
+
+\title{Project Template For CSE 291}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  First Name, Last Name\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)---\emph{not} for acknowledging
+    funding agencies.} \\
+  Department of Computer Science\\
+  UC San Diego\
+  La Jolla, CA 92093 \\
+  \texttt{name@ucsd.edu} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+  One paragraph summary of your project. (1) What are we trying to do and why is it relevant?
+(2) Why is this hard?  (3) How do we solve it (i.e. our contribution!)
+% \new{Include a public github repo link with a detailed README to your project.}
+\end{abstract}
+\noindent Please submit your report as a single PDF file using this template. Use the template as follows:
+\begin{itemize}
+    \item Make a copy of this template (do NOT edit) as a new Overleaf project.
+    \item Change title to \new{\textbf{CSE 291  Project Milestone: Your Title} (Line 37)}.
+    \item Change author name and email to your  team members' names and emails (Line 49).
+    \item Follow the format instructions in Section \ref{gen_inst} to write your report.
+    % \item Delete the instructions in  your final submitted report 
+\end{itemize}
+%\noindent Document all of your work in an organized and clear manner. We may deduct points if the solution is difficult to find.
+Your report will contain the following components with a minimum \textbf{2} pages (not including references). You can find more resources on the \href{https://sites.google.com/view/cse-291-drl/project?authuser=0}{project website}. Your report will be judged by (1) how well it is following the format requirements  (2) how much technical detail it contains about  your  project (3) how creative/innovative/thoughtful  your  project idea is for the project and (4) how significant your contribution to the problem you are tackling. 
+
+\textbf{Hints on writing}:
+\begin{itemize}
+    \item Each paragraph should convey one main message, typically in the beginning sentence of the paragraph (topical sentence).
+    \item  Use simple sentences with fewer compounds or clauses. The simpler, the better. Avoid passive tense and use active tense.
+    \item Use PDF for your figures to ensure the resolution of your images.
+    \item The captions of Figures and Tables should contain sufficient details to be self-explanatory (readers can understand the figure without referring to the text).
+\end{itemize}
+Please read the instructions below carefully and follow them faithfully. You can keep the section headers but delete the instructional texts.
+
+\section{Introduction}
+Introduce the problem that you are trying to solve and write 1-2 paragraphs for each of the sub-sections. Provide a high-level summary in this section instead of detailed descriptions.
+
+\paragraph{Problem Definition.}
+Describe  what is the problem you want to solve in concise language. You may use figures to help your explanation.
+
+
+\paragraph{Problem Significance.}
+Explain  why is your problem relevant to generative AI. How is your project useful to deep learning and our society if you can solve it. 
+
+\paragraph{Technical Challenge.}
+Why is this project that you are proposing difficult? Think about challenges from (1) data gathering (2) model design (3) implementation (4) engineering (5) evaluation. 
+
+\paragraph{State-of-the-Art.}
+Find and cite (use \href{https://www.overleaf.com/learn/latex/Bibliography_management_with_bibtex}{BibTex
+}) state-of-the-art works or papers that have tried to solve a similar problem (use \href{https://scholar.google.com/}{Google Scholar} to search). Point out the limitations of the state-of-the-art.
+
+% \new{
+% \paragraph{Contributions.}
+% Summarize your contributions to this problem with bullet points. 
+% \begin{itemize}
+%     \item Contribution 1: solve a novel problem
+%     \item Contribution 2: improve the generative AI performance
+%     \item $\cdots$
+% \end{itemize}
+% }
+
+\section{Related Work}
+Provide a detailed discussion of the state-of-the-art using the references that you have found. The description can overlap with the state-of-the-art sub-section in the Introduction but should contain more technical details. Pick 2 or 3 topics that are adjacent to your problem. For example, if you are trying build a better deep generative model for speech synthesis, then the related topics can include (1) deep generative models and (2) speech synthesis.
+
+\paragraph{[Related Topic 1 keywords].} Write a few sentences summarizing the key ideas of each of the related works from State-of-the-Art in the previous section. Highlight the technical differences between the related work and your proposed method.
+
+\textbf{[Related Topic 2 keywords].} 
+
+
+
+
+
+\section{Methodology}
+
+\paragraph{Problem Setting.}
+Formally introduces the problem setting and notation (Formalism) for your method. Highlights any specific assumptions that are made that are unusual. You are encouraged to use figures or equations to better explain the input and output.
+
+\paragraph{Idea Summary.}
+Summarize your idea to solve the problem.  How is it different from the state-of-the-art method? Provide a sketch of your idea to illustrate y our idea. Is there any risk associated with your idea? Provide alternative solutions if your idea does not work out.
+
+\new{\paragraph{Description.}
+Explain in the mathematical language of your methodology. Use the (probabilistic) notations introduced in the problem definition, and explain what distributions your generative AI model is learning (Hint: a distribution over high-dimensional data). Which generative model do you plan to use to learn this distribution?    Draw an overview figure to illustrate the details of your idea. 
+}
+% \new{
+% \paragraph{Implementation.}
+% Provide technical details for your implementation. What deep learning framework did you use (Keras, Tensorflow or Pytorch)? Did you implement your model based on an existing codebase? If yes, pls include the reference and highlight your contribution to the codebase. What model architectures have you tried? What engineering tricks (e.g. BatchNorm, Drop-Out, Early Stopping) did you implement? How did you tune the hyper-parameters?
+% }
+
+
+\section{Experiments}
+\paragraph{Datasets and Tools.}
+List the datasets or tools  you used for this project. Only describe the datasets that you have used in the experiments. Provide details in numbers about the size, and dimension of the datasets. Provide links to these resources if available.
+
+\paragraph{Baselines.}
+List the  baseline methods  that you plan to include for comparison. Explain your rationale for choosing these baselines. They can be publicly available solutions from existing papers or even open-source projects on Github. Provide references for these baselines. 
+{
+
+\begin{itemize}
+    \item Baseline 1 [reference]: 1-2 sentences summary of the baseline.
+    \item Baseline 2 [reference]:1-2 sentences summary of the baseline.
+    \item $\dots$
+\end{itemize}
+}
+
+
+\paragraph{Evaluation Metrics.}
+What are the evaluation metrics that will be used to quantify the performance? Can you think of quantitative metrics to compare your method with the baselines? 
+
+\new{
+\paragraph{Quantitative Results.}
+Report quantitative results that you have achieved with the baselines.
+% \new{Report quantitative results of your final implementation of the proposed idea. Highlight the method that has the best performance compared to baselines in boldface.  
+% }
+You are encouraged to use figures or tables to better organize your results. If you don't have any baselines to compare with, you can also include the simplest solution you can think of to start with. Examples of quantitative results can include sample quality scores, model likelihood, run-time comparison, downstream supervised-learning prediction performance, etc. Remember to include standard deviation over multiple random runs.
+}
+
+\new{
+\paragraph{Qualitative Results.}
+Report qualitative results that you have achieved with the baselines.
+% \new{Report qualitative results of your final implementation of the proposed idea. Explain the qualitative differences between your method and the baselines.}
+ You are encouraged to use figures or tables to better organize your results. If you don't have any baselines to compare with, you can also include the simplest solution you can think of to start with.. Example qualitative results can include visualization of the generated samples, an interactive demo page, visualization of the learned model, etc. 
+ }
+
+
+% % \paragraph{Ablative Studies.}
+% % Remove certain component of your  model  in order to gain a better understanding of your method.  Each time you can  remove one of the modules and check the performance of the new model to investigate the influence of the removed module:
+
+
+
+\new{
+\section{Conclusion and Discussion}
+Provide a few sentences to summarize your project. 
+\paragraph{Achievements.}
+What have you achieved so far? What is the significance of your contribution? Did you contribute to dataset curation, algorithm improvement or model development?  Summarize your achievement in quantitative terms. We value the effort that you have devoted to this project.
+
+
+
+\paragraph{Lessons Learned.}
+What did you learn from this project at this point?   Brainstorm in different aspects including selecting problems, literature survey, team formulation and technical implementation. 
+% If given more time, what aspects and how would you improve your project development?
+
+
+\paragraph{Plans Forward.}
+What do you plan to do from now until the final report? Any change of plans from the initial proposal? What decision factors contributed to this change of plans?
+
+\paragraph{Bottlenecks and Mitigation.}
+What are potential bottlenecks of the project? How do you plan to resolve them?  Any changes that you would like to highlight from the proposal?
+}
+
+
+\paragraph{Team Responsibilities.}
+Summarize the background and expertise for each of your team member. Clearly identify each person's role and contribution in the next phase of the project.
+
+\new{
+\paragraph{Updated Timelines.}
+Update the timeline with the milestones to achieve your expected outcome in this class, considering the discussion provided above.
+\begin{itemize}
+    \item Week 2: Fill in your milestones and deliverable
+    \item Week 3:
+    \item ...
+    \item Week 10:
+\end{itemize}
+
+\paragraph{Expected Outcome.} What do we expect to see at the end of the class when you successfully finish the project?  What would be a minimal outcome? What would be a stretched goal?
+}
+
+\section{LLM Usage}
+The use of LLMs is allowed as a general-purpose assist tool. However,  if LLMs played a significant role in research ideation and/or writing to the extent that they could be regarded as a contributor, then authors should describe the precise role of the LLM in this section on LLM usage. 
+
+Irrespective of the ways that LLMs were used in a given project, authors should understand that they take full responsibility for the contents written under their name, including content generated by LLMs that could be construed as plagiarism or scientific misconduct (e.g., fabrication of facts).  LLMs are not eligible for authorship.
+
+\section*{References}
+
+
+References follow the acknowledgments. Use unnumbered first-level heading for
+the references. Any choice of citation style is acceptable as long as you are
+consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
+when listing the references.
+Note that the Reference section does not count towards the page limit.
+\medskip
+
+
+{
+\small
+
+
+[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
+connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
+(eds.), {\it Advances in Neural Information Processing Systems 7},
+pp.\ 609--616. Cambridge, MA: MIT Press.
+
+
+[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
+  Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
+TELOS/Springer--Verlag.
+
+
+[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
+recall at excitatory recurrent synapses and cholinergic modulation in rat
+hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
+}
+
+\newpage
+
+\appendix
+\section{General formatting instructions}
+\label{gen_inst}
+
+
+The text must be confined within a rectangle 5.5~inches (33~picas) wide and
+9~inches (54~picas) long. The left margin is 1.5~inch (9~picas).  Use 10~point
+type with a vertical spacing (leading) of 11~points.  Times New Roman is the
+preferred typeface throughout, and will be selected for you by default.
+Paragraphs are separated by \nicefrac{1}{2}~line space (5.5 points), with no
+indentation.
+
+
+The paper title should be 17~point, initial caps/lower case, bold, centered
+between two horizontal rules. The top rule should be 4~points thick and the
+bottom rule should be 1~point thick. Allow \nicefrac{1}{4}~inch space above and
+below the title to rules. All pages should start at 1~inch (6~picas) from the
+top of the page.
+
+
+For the final version, authors' names are set in boldface, and each name is
+centered above the corresponding address. The lead author's name is to be listed
+first (left-most), and the co-authors' names (if different address) are set to
+follow. If there is only one co-author, list both author and co-author side by
+side.
+
+
+Please pay special attention to the instructions in Section \ref{others}
+regarding figures, tables, acknowledgments, and references.
+
+
+\section{Headings: first level}
+\label{headings}
+
+
+All headings should be lower case (except for first word and proper nouns),
+flush left, and bold.
+
+
+First-level headings should be in 12-point type.
+
+
+\subsection{Headings: second level}
+
+
+Second-level headings should be in 10-point type.
+
+
+\subsubsection{Headings: third level}
+
+
+Third-level headings should be in 10-point type.
+
+
+\paragraph{Paragraphs}
+
+
+There is also a \verb+\paragraph+ command available, which sets the heading in
+bold, flush left, and inline with the text, with the heading followed by 1\,em
+of space.
+
+
+\section{Citations, figures, tables, references}
+\label{others}
+
+
+These instructions apply to everyone.
+
+
+\subsection{Citations within the text}
+
+
+The \verb+natbib+ package will be loaded for you by default.  Citations may be
+author/year or numeric, as long as you maintain internal consistency.  As to the
+format of the references themselves, any style is acceptable as long as it is
+used consistently.
+
+
+The documentation for \verb+natbib+ may be found at
+\begin{center}
+  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
+\end{center}
+Of note is the command \verb+\citet+, which produces citations appropriate for
+use in inline text.  For example,
+\begin{verbatim}
+   \citet{hasselmo} investigated\dots
+\end{verbatim}
+produces
+\begin{quote}
+  Hasselmo, et al.\ (1995) investigated\dots
+\end{quote}
+
+
+If you wish to load the \verb+natbib+ package with options, you may add the
+following before loading the \verb+neurips_2022+ package:
+\begin{verbatim}
+   \PassOptionsToPackage{options}{natbib}
+\end{verbatim}
+
+
+If \verb+natbib+ clashes with another package you load, you can add the optional
+argument \verb+nonatbib+ when loading the style file:
+\begin{verbatim}
+   \usepackage[nonatbib]{neurips_2022}
+\end{verbatim}
+
+
+As submission is double blind, refer to your own published work in the third
+person. That is, use ``In the previous work of Jones et al.\ [4],'' not ``In our
+previous work [4].'' If you cite your other papers that are not widely available
+(e.g., a journal paper under review), use anonymous author names in the
+citation, e.g., an author of the form ``A.\ Anonymous.''
+
+
+\subsection{Footnotes}
+
+
+Footnotes should be used sparingly.  If you do require a footnote, indicate
+footnotes with a number\footnote{Sample of the first footnote.} in the
+text. Place the footnotes at the bottom of the page on which they appear.
+Precede the footnote with a horizontal rule of 2~inches (12~picas).
+
+
+Note that footnotes are properly typeset \emph{after} punctuation
+marks.\footnote{As in this example.}
+
+
+\subsection{Figures}
+
+
+\begin{figure}
+  \centering
+  \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+  \caption{Sample figure caption.}
+\end{figure}
+
+
+All artwork must be neat, clean, and legible. Lines should be dark enough for
+purposes of reproduction. The figure number and caption always appear after the
+figure. Place one line space before the figure caption and one line space after
+the figure. The figure caption should be lower case (except for first word and
+proper nouns); figures are numbered consecutively.
+
+
+You may use color figures.  However, it is best for the figure captions and the
+paper body to be legible if the paper is printed in either black/white or in
+color.
+
+
+\subsection{Tables}
+
+
+All tables must be centered, neat, clean and legible.  The table number and
+title always appear before the table.  See Table~\ref{sample-table}.
+
+
+Place one line space before the table title, one line space after the
+table title, and one line space after the table. The table title must
+be lower case (except for first word and proper nouns); tables are
+numbered consecutively.
+
+
+Note that publication-quality tables \emph{do not contain vertical rules.} We
+strongly suggest the use of the \verb+booktabs+ package, which allows for
+typesetting high-quality, professional tables:
+\begin{center}
+  \url{https://www.ctan.org/pkg/booktabs}
+\end{center}
+This package was used to typeset Table~\ref{sample-table}.
+
+
+\begin{table}
+  \caption{Sample table title}
+  \label{sample-table}
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    \multicolumn{2}{c}{Part}                   \\
+    \cmidrule(r){1-2}
+    Name     & Description     & Size ($\mu$m) \\
+    \midrule
+    Dendrite & Input terminal  & $\sim$100     \\
+    Axon     & Output terminal & $\sim$10      \\
+    Soma     & Cell body       & up to $10^6$  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+\section{Final instructions}
+
+
+Do not change any aspects of the formatting parameters in the style files.  In
+particular, do not modify the width or length of the rectangle the text should
+fit into, and do not change font sizes (except perhaps in the
+\textbf{References} section; see below). Please note that pages should be
+numbered.
+
+
+\section{Preparing PDF files}
+
+
+Please prepare submission files with paper size ``US Letter,'' and not, for
+example, ``A4.''
+
+
+Fonts were the main cause of problems in the past years. Your PDF file must only
+contain Type 1 or Embedded TrueType fonts. Here are a few instructions to
+achieve this.
+
+
+\begin{itemize}
+
+
+\item You should directly generate PDF files using \verb+pdflatex+.
+
+
+\item You can check which fonts a PDF files uses.  In Acrobat Reader, select the
+  menu Files$>$Document Properties$>$Fonts and select Show All Fonts. You can
+  also use the program \verb+pdffonts+ which comes with \verb+xpdf+ and is
+  available out-of-the-box on most Linux machines.
+
+
+\item The IEEE has recommendations for generating PDF files whose fonts are also
+  acceptable for NeurIPS. Please see
+  \url{http://www.emfield.org/icuwb2010/downloads/IEEE-PDF-SpecV32.pdf}
+
+
+\item \verb+xfig+ "patterned" shapes are implemented with bitmap fonts.  Use
+  "solid" shapes instead.
+
+
+\item The \verb+\bbold+ package almost always uses bitmap fonts.  You should use
+  the equivalent AMS Fonts:
+\begin{verbatim}
+   \usepackage{amsfonts}
+\end{verbatim}
+followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or \verb+\mathbb{C}+
+for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You can also use the following
+workaround for reals, natural and complex:
+\begin{verbatim}
+   \newcommand{\RR}{I\!\!R} %real numbers
+   \newcommand{\Nat}{I\!\!N} %natural numbers
+   \newcommand{\CC}{I\!\!\!\!C} %complex numbers
+\end{verbatim}
+Note that \verb+amsfonts+ is automatically loaded by the \verb+amssymb+ package.
+
+
+\end{itemize}
+
+
+If your file contains type 3 fonts or non embedded TrueType fonts, we will ask
+you to fix it.
+
+
+\subsection{Margins in \LaTeX{}}
+
+
+Most of the margin problems come from figures positioned by hand using
+\verb+\special+ or other commands. We suggest using the command
+\verb+\includegraphics+ from the \verb+graphicx+ package. Always specify the
+figure width as a multiple of the line width as in the example below:
+\begin{verbatim}
+   \usepackage[pdftex]{graphicx} ...
+   \includegraphics[width=0.8\linewidth]{myfile.pdf}
+\end{verbatim}
+See Section 4.4 in the graphics bundle documentation
+(\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
+
+
+A number of width problems arise when \LaTeX{} cannot properly hyphenate a
+line. Please give LaTeX hyphenation hints using the \verb+\-+ command when
+necessary.
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

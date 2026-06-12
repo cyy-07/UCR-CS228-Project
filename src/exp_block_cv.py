@@ -1,14 +1,13 @@
 """
-src/exp_block_cv.py  —  Reviewer R5: cross-month robustness check.
+src/exp_block_cv.py  —  cross-month robustness check.
 
 What it does
 ------------
 All headline numbers in the report come from a single chronological
-70/15/15 split. The reviewer's complaint was that this hides whether the
-margin survives if the cut is moved. This script reruns the headline pair
-(iTransformer vs TC-DPMixer; we also include DLinear as a cheap sanity
-peg) at K=4 chronological cutoffs that emulate rolling-origin CV. The
-test slab is the tail after each cut.
+70/15/15 split. This script reruns the headline pair (iTransformer vs
+TC-DPMixer; DLinear included as a cheap sanity peg) at K=4 chronological
+cutoffs that emulate rolling-origin CV. The test slab is the tail after
+each cut.
 
   Fold 1:  train 55 % | val 10 % | test 35 %   (earliest cut)
   Fold 2:  train 60 % | val 10 % | test 30 %
