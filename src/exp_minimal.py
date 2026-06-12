@@ -17,9 +17,7 @@ turns OFF the decomposition and channel branches.
   minimal-A  : persistence + time + TC gate          (kills decomp, channel)
   minimal-B  : persistence + time only (no gate)     (kills decomp, channel, gate)
 
-5 seeds. The promise to the reader: if minimal-A matches full within
-noise, the report can honestly call the simpler variant the actual
-contribution. If it does not, the redundant branches earn their keep.
+5 seeds per variant.
 
 Run
 ---

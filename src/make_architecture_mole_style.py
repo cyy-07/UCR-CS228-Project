@@ -1,18 +1,15 @@
 """
 make_architecture_mole_style.py — TC-DPMixer architecture in MoLE-paper visual style.
 
-Same visual language as the MoLE paper figure (light-blue rounded outer
-boxes, yellow inner learnable blocks, ×/+ nodes, mixing-layer on right
-feeding gating signals), BUT making the structural CONTRAST explicit:
+Light-blue rounded outer boxes, yellow inner learnable blocks, ×/+ nodes,
+mixing-layer on the right feeding the gating signals.
 
-    MoLE      : K stacked HOMOGENEOUS heads (all DLinear)
-    TC-DPMixer: 4 distinct HETEROGENEOUS branches
+    MoLE      : K stacked homogeneous heads (all DLinear)
+    TC-DPMixer: 4 heterogeneous branches
                 (Persistence / Decomp / Channel-mix / Time-mix)
 
-This is the figure we'd use in Q&A to defend "we're not the same as MoLE".
-
 Output:
-    CS228/results/figures/fig_architecture_mole_style.png  (+ .pdf vector)
+    results/figures/fig_architecture_mole_style.png  (+ .pdf vector)
 """
 
 import os
@@ -36,7 +33,9 @@ GATE_EDGE    = "#D99A2B"
 WHITE        = "#FFFFFF"
 
 rcParams.update({
-    "font.family": "DejaVu Sans",
+    "font.family": "serif",
+    "font.serif": ["DejaVu Serif", "STIXGeneral", "Times New Roman"],
+    "mathtext.fontset": "dejavuserif",
     "savefig.dpi": 220,
     "savefig.bbox": "tight",
     "figure.facecolor": "white",
@@ -159,7 +158,7 @@ def main():
 
     # ── top inputs ──────────────────────────────────────────────
     # Input labels
-    label(ax, 25, 108.0, "Time series  X  ∈ ℝ⁹⁶ ˣ ³²",
+    label(ax, 25, 108.0, r"Time series  X  $\in \mathbb{R}^{96 \times 32}$",
           size=10.5, weight="bold")
     label(ax, 84, 108.0, "Time features  (ch 26–31)",
           size=10.5, weight="bold", color=GATE_EDGE)
@@ -277,7 +276,7 @@ def main():
     # arrow to output
     arrow(ax, (sum_x, sum_y - 2.7), (sum_x, 20), lw=1.3)
     rbox(ax, sum_x - 14, 11, 28, 9, "#E0F0E4", "#5AA17A", lw=1.4)
-    label(ax, sum_x, 17, "ŷ ∈ ℝᴴ",
+    label(ax, sum_x, 17, r"$\hat{y} \in \mathbb{R}^{H}$",
           size=11, weight="bold")
     label(ax, sum_x, 13.5,
           "forecast  (H = 24 short / 168 weekly)",
