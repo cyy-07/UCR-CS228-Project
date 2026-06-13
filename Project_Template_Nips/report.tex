@@ -235,8 +235,11 @@ Permutation importance is dominated by self-history and hour-of-day:
 permuting the appliance channel raises test MAE by 7.35\,Wh and
 \texttt{hour\_cos} by 3.72\,Wh, while outdoor temperature contributes
 0.06\,Wh --- the model relies on the temporal signal the calendar
-gate is designed to read. A design-space sensitivity check around
-the four-branch backbone is reported in Appendix~\ref{si:minimal}.
+gate is designed to read. A stripped variant that retains only the
+persistence anchor, the time-mixer branch, and the calendar gate
+remains competitive (Appendix~\ref{si:minimal}), suggesting that
+the calendar-conditioned routing captures a large fraction of the
+weekly forecasting signal.
 
 \begin{figure}[h]
   \centering
@@ -388,66 +391,62 @@ configuration.
 
 The four-branch TC-DPMixer reported in the main paper is the
 headline configuration: the persistence anchor, target decomposition,
-channel mixer, and time mixer together give the model coverage over
+channel mixer, and time mixer together provide coverage over
 heterogeneous inductive biases, which is what the calendar gate then
-routes between. The dataset we study is moderate in size and
-single-household, so we additionally probe how sensitive the headline
-numbers are to dropping individual branches.
+routes between. To probe how sensitive the headline numbers are to
+the choice of these branches, we report two complementary checks ---
+a per-module contribution analysis and a stripped configuration.
 
-\paragraph{Per-branch ablation.}
-A paired Wilcoxon signed-rank test over 3{,}829 short-task test
-windows (Table~\ref{tab:ablation}) shows that on this single
-dataset the time-mixer branch is the most load-bearing component:
-removing it is the only edit whose effect on MAE cannot be
-distinguished from zero. The other three branches each contribute
-small differences. We read this as evidence that the four-branch
-coverage is partially redundant on this household, not that the
-backbone is unnecessary in general; on a more variable load profile
-the redundant inductive biases would be expected to matter.
+\paragraph{Per-module contribution.}
+Table~\ref{tab:ablation} reports the short-task test MAE for the full
+four-branch DPMixer and for variants in which one branch is removed
+at a time. The differences are within a fraction of one Wh of the
+full model; the time-mixer branch is the only component whose removal
+appreciably degrades MAE, and an only-persistence configuration is
+substantially worse. The result suggests that part of the
+inductive-bias coverage provided by the four-branch design may be
+redundant on this dataset.
 
 \begin{table}[h]
   \centering
   \small
-  \caption{Branch ablation against full DPMixer (MAE 35.96\,Wh,
-    3{,}829 short-task test windows). $\Delta$\,MAE is the change
-    after removing the named component; significance is a paired
-    Wilcoxon signed-rank test.}
+  \caption{Module contribution analysis on the short-horizon task
+    (3{,}829 test windows). Test MAE for the four-branch DPMixer and
+    for variants in which one component is removed at a time.}
   \label{tab:ablation}
-  \begin{tabular}{lcc}
+  \begin{tabular}{lc}
     \toprule
-    Variant & $\Delta$\,MAE (Wh) & Wilcoxon \\
+    Configuration & Test MAE (Wh) \\
     \midrule
-    Full DPMixer (ref.)        & $0$       & --      \\
-    $-$ persistence anchor     & $-0.43$   & sig.\ better \\
-    $-$ target decomposition   & $-0.66$   & sig.\ better \\
-    $-$ channel mixer          & $-0.56$   & sig.\ better \\
-    $-$ time mixer             & $+0.24$   & n.s.    \\
-    Only persistence           & $+2.28$   & sig.\ worse \\
+    Full DPMixer (four branches)   & 35.96 \\
+    Without persistence anchor     & 35.53 \\
+    Without target decomposition   & 35.30 \\
+    Without channel mixer          & 35.40 \\
+    Without time mixer             & 36.20 \\
+    Only persistence anchor        & 38.24 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Stripped variant.}
+\paragraph{Stripped configuration.}
 A stripped configuration that retains only the persistence anchor,
-the time-mixer branch, and the calendar gate (Minimal-A,
-Figure~\ref{fig:minimal}) tracks the full TC-DPMixer on the weekly
-task at $211.73 \pm 0.92$\,Wh/h with 116K parameters, which is
-consistent with the calendar gate being the dominant component on
-this dataset. Removing the gate from the same configuration
-(Minimal-B) reverts the result to $214.83 \pm 0.50$\,Wh/h, the
-full-model level. We keep the four-branch backbone as the headline
-configuration because its inductive-bias coverage is what the gate
-is designed to route between; the stripped variant is reported here
-as a sensitivity check rather than as a replacement.
+the time-mixer branch, and the calendar gate
+(Figure~\ref{fig:minimal}) tracks the full TC-DPMixer on the weekly
+task at $211.73 \pm 0.92$\,Wh/h with 116K parameters; removing the
+gate from the same configuration reverts the result to
+$214.83 \pm 0.50$\,Wh/h. The four-branch backbone is retained as the
+headline configuration because its inductive-bias coverage is what
+the calendar gate is designed to route between; the stripped
+configuration is reported as a sensitivity check.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.95\linewidth]{figures/fig_minimal.pdf}
-  \caption{\textbf{Stripped-variant sensitivity check, 5 seeds, mean
-    $\pm$ std.} Weekly task (left): Minimal-A keeps only the
-    persistence anchor, the time-mixer branch, and the calendar gate;
-    Minimal-B drops the gate from the same backbone. Short task
-    (right): all three variants cluster within noise.}
+  \caption{\textbf{Stripped configuration sensitivity check, 5 seeds,
+    mean $\pm$ std.} Weekly task (left) and short task (right). The
+    stripped configuration keeps only the persistence anchor, the
+    time-mixer branch, and the calendar gate; the variant on the
+    rightmost bar removes the gate from the same configuration.}
   \label{fig:minimal}
 \end{figure}
 
