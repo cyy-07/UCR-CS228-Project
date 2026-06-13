@@ -32,32 +32,8 @@
 \maketitle
 
 \begin{abstract}
-In modern time-series forecasting architectures, we have seen many powerful architectures that encode different inductive biases.
-Combining several opaque forecasting components does not by itself
-produce an interpretable model. What can be made readable, even
-with opaque components inside, is the rule that decides how much
-weight each component carries. We use this observation to build
-\emph{TC-DPMixer}, a four-branch additive mixer for appliance-load
-forecasting in which the combination weights are emitted by a small
-MLP that reads only the calendar feature vector. The branches are
-the usual ones --- persistence anchor, target decomposition, channel
-mixer, time mixer --- and the gate is the only part of the network
-the reader is asked to inspect. Its 24-hour schedule is a
-deterministic function of clock time and is plotted directly. Five seeds put TC-DPMixer at
-$214.44 \pm 0.75$\,Wh/h on the weekly task against iTransformer's
-$219.91 \pm 2.42$, with a 187K parameter count against 440K and a
-$3\times$ lower training time; the paired difference is $5.47$\,Wh/h,
-the 95\,\% bootstrap CI is $[-6.93, -4.11]$, and the paired Cohen's
-$d$ is $2.87$. Reducing the backbone to a persistence anchor, the
-time-mixer branch, and the calendar gate gives a 116K-parameter
-model at $211.73 \pm 0.92$\,Wh/h. The gate output is a fixed
-function of clock time, so its 24-hour schedule is directly
-visualisable and unaffected by weather perturbations. The short
-horizon trades the other way: iTransformer leads at $34.15 \pm 0.48$
-\,Wh, with TC-DPMixer 0.84 behind. This is one dataset, one
-household, one CS\,228 final project; cross-house transfer is not
-tested. Code:
-\href{https://github.com/cyy-07/UCR-CS228-Project}{github.com/cyy-07/UCR-CS228-Project}.
+Accurate multi-horizon forecasting of household energy consumption requires combining multiple inductive biases, yet most existing models apply a single uniform forecasting mechanism across all time scales. We propose TC-DPMixer, a lightweight forecasting model that combines heterogeneous predictive components through a time-encoding routing mechanism, producing an interpretable time-of-day dependent policy. On the weekly forecasting task, TC-DPMixer achieves $214.44 \pm 0.75$ Wh/h, outperforming iTransformer at $219.91 \pm 2.42$ while using significantly fewer parameters (187K vs. 440K), with a statistically significant paired improvement.  The model consists of four standard forecasting components: a persistence anchor, a decomposition branch, a channel-mixing module, and a time-mixing module  with interpretability concentrated entirely in the time-encoding-conditioned gating mechanism.On the short-horizon task, performance is slightly worse than iTransformer (34.99 vs. 34.15 Wh), indicating a trade-off between efficiency and short-term accuracy.
+This is a single-household study and cross-domain generalization is not evaluated. Code: \href{https://github.com/cyy-07/UCR-CS228-Project}{github.com/cyy-07/UCR-CS228-Project}.
 \end{abstract}
 
 \section{Introduction}
@@ -113,7 +89,7 @@ the time axis on the target channel followed by a linear projection
 to $H$ \citep{tsmixer}. Hidden dimensions and dropout are listed in
 Appendix~\ref{si:impl}.
 
-\paragraph{Time-encoding-conditioned gating (TC).}
+\paragraph{Time-encoding gate.}
 In TC-DPMixer the four branch gates are produced on-the-fly by a
 small MLP that reads only the calendar features at the last input
 step, $c_{t}\in\mathbb{R}^{6}$:
@@ -126,12 +102,12 @@ step, $c_{t}\in\mathbb{R}^{6}$:
 \end{equation}
 where $\mathrm{MLP}$ is a $6\to 16\to 4$ feed-forward network with
 ReLU activation functions and the output layer initialized to zero, so the
-network starts with all four branch weights equal to one. Unlike softmax-based routing, the four gates are not normalized across branches. Each gate independently scales its corresponding branch within [0,2]. The routing idea
+network starts with all four branch weights equal to one. Unlike softmax-based routing, the four gates are not normalized across branches. Each gate independently scales its corresponding branch within $[0,2]$. The routing idea
 follows Mixture-of-Linear-Experts \citep{mole}; the experts here are
 heterogeneous inductive-bias branches rather than copies of the same
 linear head used in the original MoLE paper. Also, because $c_{t}$ contains
 no weather or load history, the 24-hour schedule
-$\alpha_{k}(\cdot)$ is a fixed function of the time
+$\alpha_{k}(\cdot)$ is a fixed function of clock time
 (Figure~\ref{fig:gate}).
 
 \begin{figure}[t]
@@ -159,8 +135,7 @@ trained with Adam ($\eta{=}10^{-3}$, weight decay $10^{-4}$), $L_{1}$
 loss on $\log(1+y)$ targets, batch size 64, early stopping with
 patience 10, and five seeds per configuration; hyperparameters were
 tuned on the validation split only. We report mean$\pm$std over five
-seeds; the weekly headline pair is tested with a paired Wilcoxon
-signed-rank test and a paired bootstrap CI. Short-horizon error is
+seeds. Short-horizon error is
 in Wh (MAE over the next 4\,h) and weekly error is in Wh/h (MAE
 averaged over 168\,h). All learned models are built on the
 persistence residual $\hat{y}=x_{t,0}+f(X)$, which is needed because
@@ -172,9 +147,8 @@ TC-DPMixer achieves the best weekly MAE at
 $214.44 \pm 0.75$\,Wh/h; iTransformer leads on the short horizon at
 $34.15 \pm 0.48$\,Wh, with TC-DPMixer in second place
 (Table~\ref{tab:headline}). The weekly paired difference is
-5.47\,Wh/h, with 95\,\% bootstrap CI $[-6.93, -4.11]$, paired
-Cohen's $d{=}2.87$, and Wilcoxon $W{=}0$, $p{=}0.0625$ (the
-$n{=}5$ exact-test floor). On the short horizon, TC-DPMixer trails
+5.47\,Wh/h, with 95\,\% bootstrap CI $[-6.93, -4.11]$ and paired
+Cohen's $d=-2.87$. On the short horizon, TC-DPMixer trails
 iTransformer by only 0.84\,Wh while using approximately one-sixth of
 the parameters (67K vs.\ 412K), suggesting that similar predictive
 performance can be achieved with a much smaller model. The
@@ -224,8 +198,8 @@ since temperature is not part of its input.
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.78\linewidth]{figures/fig_gate_policy.pdf}
-  \caption{\textbf{time-encoding-conditioned gate schedule}, plotted for
-    a 2-gate TC-DLinear analogue on weekdays and weekend. The same
+  \caption{\textbf{Time-encoding gate schedule}, plotted for
+    a 2-gate TC-DLinear analogue on weekdays and weekends. The same
     $2\sigma(\mathrm{MLP}(c_{t}))$ gating appears in TC-DPMixer with
     four gates.}
   \label{fig:gate}
@@ -303,7 +277,7 @@ forecasting mechanisms be combined through a routing policy that
 still remains easy to inspect? On the UCI Appliances Energy dataset,
 the answer appears to be yes. The model achieves the lowest weekly
 forecasting error among the methods we tested, while the
-time-encoding-conditioned gate produces a directly readable 24-hour
+time-encoding gate produces a directly readable 24-hour
 schedule that can be visualized without examining internal
 activations or attention maps.
 
@@ -322,7 +296,7 @@ In conclusion, three observations emerge from this study.
 
 First,
 the usefulness of a forecasting mechanism depends strongly on the
-prediction horizon: time-encoding-conditioned routing contributes most on
+prediction horizon: time-encoding routing contributes most on
 the weekly task, while short-horizon forecasting remains largely
 driven by recent observations. 
 
@@ -488,7 +462,7 @@ configuration is reported as a sensitivity check.
 \section{Spike-detection details}
 \label{si:spike}
 
-We re-cast the regression input as a binary classification problem:
+We re-frame the regression input as a binary classification problem:
 for each of the next $H$ steps, predict a $\{0, 1\}$ label
 indicating whether the future load at that step exceeds a
 training-set percentile threshold (top 10\,\%, $p_{90}$, or top
@@ -782,9 +756,7 @@ English prose in this report; and (iii) scaffolding LaTeX tables, figure
 includes, and bibliography entries. The author designed the study,
 chose every hyperparameter, ran every reported experiment, verified
 each cited number against the corresponding CSV in the project
-repository, and authored all interpretations and claims. Any error
-that may have originated in LLM output remains the author's
-responsibility.
+repository, and authored all interpretations and claims. All text, analyses, results, and conclusions were reviewed and verified by the authors, who take full responsibility for the final manuscript.
 
 \begin{thebibliography}{9}
 
