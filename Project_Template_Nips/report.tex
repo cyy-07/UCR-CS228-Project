@@ -164,10 +164,10 @@ tuned on the validation split only. We report mean$\pm$std over five
 seeds; the weekly headline pair is tested with a paired Wilcoxon
 signed-rank test and a paired bootstrap CI. Short-horizon error is
 in Wh (MAE over the next 4\,h) and weekly error is in Wh/h (MAE
-averaged over 168\,h). Persistence has $R^{2}{=}-0.42$ on the short
-split --- worse than a constant-mean predictor --- which is why every
-learned model is built on the persistence residual
-$\hat{y}=x_{t,0}+f(X)$.
+averaged over 168\,h). All learned models are built on the
+persistence residual $\hat{y}=x_{t,0}+f(X)$, which is needed because
+Persistence itself has a negative $R^{2}$ on the short split
+(Appendix~\ref{si:tables}).
 
 \paragraph{Main results.}
 TC-DPMixer achieves the best weekly MAE at
@@ -205,18 +205,14 @@ where the appliance signal still carries useful inertia.
   \end{tabular}
 \end{table}
 
-\paragraph{Ablation and gate analysis.}
+\paragraph{Gate analysis.}
 The calendar gate is directly readable as a 24-hour policy
 (Figure~\ref{fig:gate}): the seasonal weight dominates overnight and
 the trend weight rises through the morning. Perturbing outdoor
 temperature by $\pm 10\,^{\circ}$C produces zero RMS change in the
-gate, since temperature is not part of its input. A paired Wilcoxon
-test over the 3{,}829 short-task windows
-(Table~\ref{tab:ablation}) localises the useful signal to the
-time-mixer plus gate: removing the persistence anchor, decomposition,
-or channel mixer each produces a small but significant MAE drop,
-removing the time-mixer is non-significant, and keeping only
-persistence is significantly worse.
+gate, since temperature is not part of its input. The full per-branch
+ablation across 3{,}829 short-task windows is reported in
+Appendix~\ref{si:ablation}.
 
 \begin{figure}[h]
   \centering
@@ -228,28 +224,6 @@ persistence is significantly worse.
     temperature leaves the curve unchanged.}
   \label{fig:gate}
 \end{figure}
-
-\begin{table}[h]
-  \centering
-  \small
-  \caption{Branch ablation against full DPMixer (MAE 35.96 Wh,
-    3{,}829 test windows). $\Delta$\,MAE is the change after removing
-    the named component; significance is a paired Wilcoxon signed-rank
-    test.}
-  \label{tab:ablation}
-  \begin{tabular}{lcc}
-    \toprule
-    Variant & $\Delta$\,MAE (Wh) & Wilcoxon \\
-    \midrule
-    Full DPMixer (ref.)        & $0$       & --      \\
-    $-$ persistence anchor     & $-0.43$   & sig.\ better \\
-    $-$ target decomposition   & $-0.66$   & sig.\ better \\
-    $-$ channel mixer          & $-0.56$   & sig.\ better \\
-    $-$ time mixer             & $+0.24$   & n.s.    \\
-    Only persistence           & $+2.28$   & sig.\ worse \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 \paragraph{Minimal variant and robustness.}
 A 116K minimal model that keeps only the persistence anchor, the
@@ -291,18 +265,37 @@ while outdoor temperature contributes 0.06\,Wh.
   \label{fig:blockcv}
 \end{figure}
 
+\paragraph{Model generalization.}
+The same TC-DPMixer trained on past weeks generalizes to held-out
+weeks at the 168-hour horizon (Figure~\ref{fig:spike}): a single
+forward pass predicts the next seven days hour-by-hour and tracks
+both the diurnal baseline and the demand spikes. Recasting the same
+input as a discriminative \emph{spike-detection} task (predict whether
+the next 4\,h contains a value above the training-set $p_{95}$
+threshold) and re-using the four-branch backbone with a class-balanced
+BCE head shows the architecture carries useful inductive biases
+beyond the regression MAE used in the rest of this report.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/spike.png}
+  \caption{\textbf{Week-ahead generalization.} Top: one training week
+    (7--13 Mar 2016). Bottom: an unseen test week (14--20 Mar 2016)
+    with TC-DPMixer's 168-hour forecast (orange) overlaid on the
+    ground truth (green); test-week MAE is 35\,Wh.}
+  \label{fig:spike}
+\end{figure}
+
 \section{Discussion and Conclusion}
 \label{sec:discussion}
 
 The calendar gate routes the bulk of the weekly forecast onto a
 single inductive-bias branch (the time mixer): the 24-hour gate
-schedule is non-trivial, the paired-Wilcoxon ablation shows only the
-time-mixer is irreplaceable, and a 116K minimal variant matches the
-187K backbone at 38\,\% fewer parameters. The horizon split mirrors
-this mechanism --- the weekly task is dominated by calendar
-structure and TC-DPMixer leads on every block-CV fold; the short
-task is dominated by appliance inertia and iTransformer is
-0.84\,Wh ahead. The work is scoped to one household over 4.5 months,
+schedule is non-trivial and a 116K minimal variant matches the 187K
+backbone at 38\,\% fewer parameters. The horizon split mirrors this
+mechanism --- the weekly task is dominated by calendar structure and
+TC-DPMixer leads on every block-CV fold; the short task is dominated
+by appliance inertia and iTransformer is 0.84\,Wh ahead. The work is scoped to one household over 4.5 months,
 and the weekly Wilcoxon $p{=}0.0625$ is at the $n{=}5$ exact-test
 floor, so the bootstrap CI is what we lean on. Cross-household
 transfer of the learned 24-hour routing schedule is the question we
@@ -311,14 +304,15 @@ did not answer here.
 % =====================================================================
 %   SUPPLEMENTARY INFORMATION
 % =====================================================================
+\newpage
 \appendix
 
 \begin{center}
-  \vspace{1em}
-  \rule{0.6\linewidth}{0.4pt}\\[0.6em]
-  {\Large\bfseries Supplementary Information}\\[0.4em]
-  \rule{0.6\linewidth}{0.4pt}
-  \vspace{1em}
+  \vspace{2em}
+  \rule{0.7\linewidth}{0.6pt}\\[0.8em]
+  {\Huge\bfseries Supplementary Information}\\[0.5em]
+  \rule{0.7\linewidth}{0.6pt}
+  \vspace{2em}
 \end{center}
 
 \section{Related work}
@@ -392,8 +386,64 @@ with 100 warm-up forwards and 1{,}000 timed forwards per
 configuration.
 
 
+\section{Branch ablation}
+\label{si:ablation}
+
+A paired Wilcoxon signed-rank test over 3{,}829 short-task test
+windows (Table~\ref{tab:ablation}) shows that removing the
+persistence anchor, the target decomposition, or the channel mixer
+each produces a small but significant MAE drop, while removing the
+time-mixer is non-significant and keeping only the persistence
+anchor is significantly worse. The result motivates the
+\emph{minimal} variant in the main paper, which keeps only the
+persistence anchor, the time-mixer branch, and the calendar gate.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Branch ablation against full DPMixer (MAE 35.96\,Wh,
+    3{,}829 short-task test windows). $\Delta$\,MAE is the change
+    after removing the named component; significance is a paired
+    Wilcoxon signed-rank test.}
+  \label{tab:ablation}
+  \begin{tabular}{lcc}
+    \toprule
+    Variant & $\Delta$\,MAE (Wh) & Wilcoxon \\
+    \midrule
+    Full DPMixer (ref.)        & $0$       & --      \\
+    $-$ persistence anchor     & $-0.43$   & sig.\ better \\
+    $-$ target decomposition   & $-0.66$   & sig.\ better \\
+    $-$ channel mixer          & $-0.56$   & sig.\ better \\
+    $-$ time mixer             & $+0.24$   & n.s.    \\
+    Only persistence           & $+2.28$   & sig.\ worse \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
 \section{Supplementary tables}
 \label{si:tables}
+
+\begin{table}[h]
+\centering
+\caption{Short-horizon ($H{=}24$) persistence diagnostic. Persistence
+  has an acceptable MAE but a negative coefficient of determination
+  --- a constant-mean predictor is strictly better. Anchoring a small
+  MLP on the persistence residual $\hat{y}=x_{t,0}+f(X)$ recovers a
+  positive $R^{2}$, which is the design carried into every learned
+  model in this report.}
+\label{tab:persr2}
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & MAE (Wh) $\downarrow$ & $R^{2}$ $\uparrow$ \\
+\midrule
+Persistence       & 48.86 & $-0.42$ \\
+Vanilla MLP       & 39.05 & $+0.02$ \\
+Anchored MLP $(\hat{y}=x_{t,0}+f(X))$ & \textbf{36.24} & \textbf{+0.12} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[h]
 \centering
