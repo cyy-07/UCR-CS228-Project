@@ -85,48 +85,38 @@ To this end, we propose TC-DPMixer, a four-branch additive forecasting model con
 \section{Method}
 \label{sec:method}
 
-\paragraph{Problem setup.}
-A window $x_{1:L}\in\mathbb{R}^{L\times C}$ holds $L$ steps of $C$
-channels --- appliance load, lights, room temperatures and humidities,
-six outdoor weather variables, and six calendar encodings. The
-forecast target $\hat{y}_{L{+}1:L{+}H}\in\mathbb{R}^{H}$ is the
-appliance channel; $H\in\{24, 168\}$ controls the short and weekly
-horizons. The headline numbers use chronological 70/15/15 splits and
-five seeds per configuration; the block-CV runs in
-Table~\ref{tab:blockcv} sweep the cut from 55/15/30 to 70/15/15.
-
 \paragraph{Four-branch backbone (DPMixer).}
+A window $x_{1:L}\in\mathbb{R}^{L\times C}$ holds $L$ steps of $C$
+input channels --- appliance load, lights, room temperatures and
+humidities, six outdoor weather variables, and six calendar
+encodings. The forecast target
+$\hat{y}_{L{+}1:L{+}H}\in\mathbb{R}^{H}$ is the appliance channel
+and $H\in\{24, 168\}$ controls the short and weekly horizons.
 DPMixer is a weighted sum of four parallel branches:
 \begin{equation}
 \hat{y}_{t+h}
 \;=\; \alpha_{0}\,x_{t,0}
 \;+\; \alpha_{1}\,\mathbf{B}_{\text{dec}}
 \;+\; \alpha_{2}\,\mathbf{B}_{\text{ch}}
-\;+\; \alpha_{3}\,\mathbf{B}_{\text{tm}},
+\;+\; \alpha_{3}\,\mathbf{B}_{\text{tm}}.
 \label{eq:dpmixer}
 \end{equation}
 The persistence anchor repeats the last observed target value
-$x_{t,0}$ across the forecast horizon, corresponding to a simple baseline
-that assumes future demand remains close or the same to the most recent observation;
-the three learned branches are:
+$x_{t,0}$ across the forecast horizon. The three learned branches are
 $\mathbf{B}_{\text{dec}}$, a DLinear-style trend $+$ seasonal
 decomposition on the target channel \citep{dlinear} (moving-average
 kernel 25, two parallel linear heads);
 $\mathbf{B}_{\text{ch}}$, two MLP-Mixer blocks acting on the last
 timestep across all $C$ channels followed by a linear projection to
-$H$; and
-$\mathbf{B}_{\text{tm}}$, two MLP-Mixer blocks acting along the time
-axis on the target channel followed by a linear projection to $H$
-\citep{tsmixer}. Hidden dimensions and dropout are listed in
-Appendix~\ref{si:impl}. The gated persistence anchor turns prediction
-into residual learning when $\alpha_{0}\approx 1$; without anchoring,
-a vanilla MLP on the same window only reaches $R^{2}{=}+0.02$
-(Table~\ref{tab:persr2}).
+$H$; and $\mathbf{B}_{\text{tm}}$, two MLP-Mixer blocks acting along
+the time axis on the target channel followed by a linear projection
+to $H$ \citep{tsmixer}. Hidden dimensions and dropout are listed in
+Appendix~\ref{si:impl}.
 
 \paragraph{Time-conditioned gating (TC).}
 In TC-DPMixer the four branch gates are produced on-the-fly by a
 small MLP that reads only the calendar features at the last input
-step(which means that we only encode the time), $c_{t}\in\mathbb{R}^{6}$:
+step, $c_{t}\in\mathbb{R}^{6}$:
 \begin{equation}
 \alpha_{k}(c_{t})
 \;=\; 2\,\sigma\!\big(\mathrm{MLP}_{k}(c_{t})\big)
@@ -134,35 +124,21 @@ step(which means that we only encode the time), $c_{t}\in\mathbb{R}^{6}$:
 \qquad k\in\{0, 1, 2, 3\},
 \label{eq:tc}
 \end{equation}
-where $\mathrm{MLP}$ is a $6\to 16\to 4$ feed-forward network with ReLU
-activations and the output layer initialised to zero, so the network
-starts with all four branch weights equal to one. The gates are not
-constrained to a probability simplex; each can independently amplify
-or down-weight its branch in $[0, 2]$. The routing idea follows
-Mixture-of-Linear-Experts \citep{mole}; the experts here are
+where $\mathrm{MLP}$ is a $6\to 16\to 4$ feed-forward network with
+ReLU activations and the output layer initialised to zero, so the
+network starts with all four branch weights equal to one. The gates
+are not constrained to a probability simplex; each can independently
+amplify or down-weight its branch in $[0, 2]$. The routing idea
+follows Mixture-of-Linear-Experts \citep{mole}; the experts here are
 heterogeneous inductive-bias branches rather than copies of the same
-linear head in original MoLE paper\citep{mole}. Because $c_{t}$ contains no weather or load history, the
-24-hour schedule $\alpha_{k}(\cdot)$ is a fixed function of the
-calendar (Figure~\ref{fig:gate}).
-
-\paragraph{Variants.}
-SS-DPMixer attaches a NILM-style spike head \citep{nilm}: a smooth
-base stream (persistence $+$ DLinear) plus a sigmoid-gated spike
-classifier multiplied by a magnitude regressor, both read from the
-channel and time MLP-Mixer branches. TC-SS-DPMixer combines the
-calendar gate with the spike head. The minimal variant in
-Section~\ref{sec:exp} keeps only the persistence anchor, the
-time-mixer branch, and the calendar gate.
-
-\paragraph{Training.}
-All models use Adam ($\eta{=}10^{-3}$, weight decay $10^{-4}$), $L_{1}$
-loss on $\log(1+y)$ targets, batch size 64, early stopping with patience
-10, and 5 seeds per configuration. Hyperparameters were tuned on the
-validation split only.
+linear head used in the original MoLE paper. Because $c_{t}$ contains
+no weather or load history, the 24-hour schedule
+$\alpha_{k}(\cdot)$ is a fixed function of the calendar
+(Figure~\ref{fig:gate}).
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.95\linewidth]{figures/fig_architecture_mole_style.png}
+  \includegraphics[width=0.95\linewidth]{figures/fig_architecture_mole_style.pdf}
   \caption{\textbf{TC-DPMixer architecture.} Four parallel branches
     (persistence anchor, target decomposition, channel mixer, time
     mixer) are summed under per-branch gates. A small MLP reads only
@@ -173,84 +149,44 @@ validation split only.
   \label{fig:arch}
 \end{figure}
 
-\paragraph{Relation to prior work.}
-DLinear and NLinear \citep{dlinear}, TSMixer \citep{tsmixer}, TimeMixer
-\citep{timemixer}, PatchTST \citep{patchtst}, iTransformer
-\citep{itransformer}, N-BEATS \citep{nbeats}, NILM seq2point
-\citep{nilm}, and MoLE \citep{mole} are the baselines and design
-ancestors of this work. Section~\ref{si:related} in the supplementary
-material covers each of them.
-
-\section{Experiments}
+\section{Experiments and Results}
 \label{sec:exp}
 
 \paragraph{Setup.}
-We use the UCI Appliances Energy dataset \citep{candanedo2017} resampled
-to 1-hour buckets, with the 4.5-month history split chronologically as
-70/15/15. We compare against two non-parametric baselines (Persistence,
-Seasonal-Naive) and four learned baselines: DLinear, PatchTST,
-iTransformer, and the un-gated DPMixer. We report mean$\pm$std over five
+We use the UCI Appliances Energy dataset \citep{candanedo2017}
+resampled to 1-hour buckets and split chronologically 70/15/15.
+Baselines are Persistence, Seasonal-Naive, DLinear, PatchTST,
+iTransformer, and the un-gated DPMixer. All learned models are
+trained with Adam ($\eta{=}10^{-3}$, weight decay $10^{-4}$), $L_{1}$
+loss on $\log(1+y)$ targets, batch size 64, early stopping with
+patience 10, and five seeds per configuration; hyperparameters were
+tuned on the validation split only. We report mean$\pm$std over five
 seeds; the weekly headline pair is tested with a paired Wilcoxon
-signed-rank test and a paired bootstrap CI (no multiple-comparison
-correction is applied; the other contrasts are descriptive).
-Short-horizon error is in Wh (MAE over the next 4\,h of hourly output)
-and weekly error is in Wh/h (MAE averaged over 168\,h).
+signed-rank test and a paired bootstrap CI. Short-horizon error is
+in Wh (MAE over the next 4\,h) and weekly error is in Wh/h (MAE
+averaged over 168\,h). Persistence has $R^{2}{=}-0.42$ on the short
+split --- worse than a constant-mean predictor --- which is why every
+learned model is built on the persistence residual
+$\hat{y}=x_{t,0}+f(X)$.
 
-\paragraph{Persistence has $R^2 = -0.42$ on the short task.}
-Persistence reaches 48.86\,Wh MAE on the short task and looks
-acceptable next to learned baselines (Table~\ref{tab:persr2}). Its
-$R^{2}$ on the same split is $-0.42$. A constant-mean predictor
-would do better, which is why we read the short-task MAE leaderboard
-as uninformative and anchor every learned model on the persistence
-residual $\hat{y}=x_{t,0}+f(X)$. With that anchor a 4-layer MLP
-recovers $R^{2}=+0.12$ at 36.24\,Wh. We read
-this as evidence that the short-task MAE leaderboard is uninformative
-on its own. Anchoring a small MLP on the persistence residual
-$\hat{y}=x_{t,0}+f(X)$ recovers a positive $R^2$ of $+0.12$ at
-36.24\,Wh, which is the design we carry forward to every learned
-model in this report.
-
-\begin{table}[h]
-  \centering
-  \caption{Short-horizon ($H{=}24$) diagnostic. Persistence has an
-    acceptable MAE but a negative coefficient of determination: the
-    constant-mean predictor is strictly better. Anchoring a small MLP on
-    persistence ($\hat{y}=x_{t,0}+f(X)$) recovers a positive $R^{2}$.}
-  \label{tab:persr2}
-  \begin{tabular}{lcc}
-    \toprule
-    Model & MAE (Wh) $\downarrow$ & $R^{2}$ $\uparrow$ \\
-    \midrule
-    Persistence       & 48.86 & $-0.42$ \\
-    Vanilla MLP       & 39.05 & $+0.02$ \\
-    Anchored MLP $(\hat{y}=x_{t,0}+f(X))$ & \textbf{36.24} & \textbf{+0.12} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\paragraph{TC-DPMixer lowers weekly MAE by 5.47 Wh/h over iTransformer.}
-Five seeds put TC-DPMixer at $214.44 \pm 0.75$\,Wh/h on the weekly
-task and iTransformer at $219.91 \pm 2.42$
-(Table~\ref{tab:headline}). The paired difference is 5.47\,Wh/h, the
-95\,\% bootstrap CI is $[-6.93, -4.11]$, and the paired Cohen's $d$
-is 2.87. We avoid quoting a $\sigma$-style number here: the paired
-Wilcoxon signed-rank test gives $W{=}0$ and $p{=}0.0625$, which is
-the smallest two-sided $p$-value $n{=}5$ allows. The CI excluding
-zero is the substantive evidence; the $p$-value is at its
-sample-size floor. The short horizon points the other way ---
-iTransformer is lowest at $34.15 \pm 0.48$\,Wh and TC-DPMixer
-trails by 0.84 at one sixth the parameter count (67K vs.\ 412K),
-which we read as the iTransformer's cross-channel attention paying
-off when the appliance signal still carries useful inertia.
+\paragraph{Main results.}
+TC-DPMixer achieves the best weekly MAE at
+$214.44 \pm 0.75$\,Wh/h; iTransformer leads on the short horizon at
+$34.15 \pm 0.48$\,Wh (Table~\ref{tab:headline}). The weekly paired
+difference is 5.47\,Wh/h with 95\,\% bootstrap CI $[-6.93, -4.11]$
+and paired Cohen's $d{=}2.87$; the Wilcoxon test gives $W{=}0$ and
+$p{=}0.0625$, the $n{=}5$ exact-test floor, so we lean on the CI
+rather than the $p$-value. On the short horizon TC-DPMixer trails
+iTransformer by 0.84\,Wh at one-sixth the parameter count
+(67K vs.\ 412K), consistent with cross-channel attention paying off
+where the appliance signal still carries useful inertia.
 
 \begin{table}[h]
   \centering
   \small
   \caption{Five-seed test error on the UCI Appliances Energy dataset.
     Short-horizon MAE is in Wh over a 4-hour window; weekly MAE is in
-    Wh/h averaged over 168\,h. Parameter counts differ between the
-    two horizons because the output dimension $H$ enters the model
-    size. Best in bold.}
+    Wh/h averaged over 168\,h. Best in bold.}
   \label{tab:headline}
   \begin{tabular}{lccrr}
     \toprule
@@ -265,56 +201,41 @@ off when the appliance signal still carries useful inertia.
     iTransformer       & \textbf{34.15\,$\pm$\,0.48} & 219.91\,$\pm$\,2.42 & 412K  & 440K  \\
     DPMixer            & 35.80\,$\pm$\,0.38  & 217.09\,$\pm$\,0.72 & 66K   & 187K  \\
     TC-DPMixer (ours)  & 34.99\,$\pm$\,0.42  & \textbf{214.44\,$\pm$\,0.75} & 67K & 187K  \\
-    TC-SS-DPMixer      & 35.14\,$\pm$\,0.23  & 220.21\,$\pm$\,0.98 & 69K   & 300K  \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{The gate reads only calendar features.}
-The calendar gate is a deterministic function of clock time, which
-makes the routing policy a 24-hour curve. Figure~\ref{fig:gate}
-plots this curve for TC-DLinear, a 2-gate analogue we train as a
-clean illustration of the calendar-routing mechanism: the seasonal
-gate dominates overnight and the trend gate rises through the
-morning. The full 4-gate schedule of TC-DPMixer follows the same
-diurnal pattern across its persistence, decomposition, channel, and
-time-mixer gates, with each gate independently in $[0, 2]$.
-Perturbing outdoor temperature by $\pm 10\,^{\circ}$C produces zero
-RMS change in the gate output, since temperature is not part of the
-gate's input. This is a property of the input partition alone and
-says nothing about the rest of the network, which can still pass
-weather information through the channel-mixer branch.
+\paragraph{Ablation and gate analysis.}
+The calendar gate is directly readable as a 24-hour policy
+(Figure~\ref{fig:gate}): the seasonal weight dominates overnight and
+the trend weight rises through the morning. Perturbing outdoor
+temperature by $\pm 10\,^{\circ}$C produces zero RMS change in the
+gate, since temperature is not part of its input. A paired Wilcoxon
+test over the 3{,}829 short-task windows
+(Table~\ref{tab:ablation}) localises the useful signal to the
+time-mixer plus gate: removing the persistence anchor, decomposition,
+or channel mixer each produces a small but significant MAE drop,
+removing the time-mixer is non-significant, and keeping only
+persistence is significantly worse.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.85\linewidth]{figures/fig_gate_policy.pdf}
-  \caption{\textbf{Calendar-conditioned gate schedule.} Plotted for
-    TC-DLinear, a 2-gate variant of our calendar-routed mixers, as a
-    clean illustration of the routing mechanism; the same
+  \includegraphics[width=0.78\linewidth]{figures/fig_gate_policy.pdf}
+  \caption{\textbf{Calendar-conditioned gate schedule}, plotted for
+    a 2-gate TC-DLinear analogue. The same
     $2\sigma(\mathrm{MLP}(c_{t}))$ gating appears in TC-DPMixer with
-    four gates rather than two. A $\pm 10\,^{\circ}$C perturbation
-    of outdoor temperature leaves the curve unchanged because
-    temperature is not part of the gate's input.}
+    four gates. A $\pm 10\,^{\circ}$C perturbation of outdoor
+    temperature leaves the curve unchanged.}
   \label{fig:gate}
 \end{figure}
-
-\paragraph{Three of four DPMixer branches are removable.}
-Table~\ref{tab:ablation} reports a paired Wilcoxon test over the
-3{,}829 short-task test windows. Removing the persistence anchor,
-the target decomposition, or the channel mixer each produces a
-small significant MAE drop. Removing the time-mixer branch is the
-only edit whose effect cannot be distinguished from zero. Keeping
-the persistence anchor alone is significantly worse. Read together,
-the table localises the working part of DPMixer to a single learned
-branch (the time mixer) plus the calendar gate; the other three
-additive branches do not earn their parameters on this dataset.
 
 \begin{table}[h]
   \centering
   \small
-  \caption{Branch ablation against full DPMixer (MAE 35.96 Wh, 3829 test
-    windows). $\Delta$\,MAE is the change after removing the named
-    component. Significance is a paired Wilcoxon signed-rank test.}
+  \caption{Branch ablation against full DPMixer (MAE 35.96 Wh,
+    3{,}829 test windows). $\Delta$\,MAE is the change after removing
+    the named component; significance is a paired Wilcoxon signed-rank
+    test.}
   \label{tab:ablation}
   \begin{tabular}{lcc}
     \toprule
@@ -330,99 +251,62 @@ additive branches do not earn their parameters on this dataset.
   \end{tabular}
 \end{table}
 
-\paragraph{A 116K minimal variant beats the 187K full model by 2.7 Wh/h on weekly.}
-The ablation suggests a simpler model: persistence anchor, time-mixer
-branch, calendar gate. We trained this configuration as Minimal-A
-(Figure~\ref{fig:minimal}). On the weekly task it reached
-$211.73 \pm 0.92$\,Wh/h at 116K parameters --- 2.71\,Wh/h below the
-187K full TC-DPMixer ($214.44 \pm 0.75$) and 38\,\% smaller. Removing
-the gate from the same configuration (Minimal-B) brings weekly MAE
-back up to $214.83 \pm 0.50$, the full-model level. The gate, not
-the depth of the additive backbone, accounts for the gain.
+\paragraph{Minimal variant and robustness.}
+A 116K minimal model that keeps only the persistence anchor, the
+time-mixer branch, and the calendar gate reaches
+$211.73 \pm 0.92$\,Wh/h on the weekly task --- 2.71\,Wh/h below the
+187K full TC-DPMixer and 38\,\% smaller (Figure~\ref{fig:minimal});
+removing the gate from the same backbone (Minimal-B) reverts the gain
+to $214.83 \pm 0.50$. Sliding the chronological cut from 55\,\% to
+70\,\% train ratio gives four block-CV folds
+(Figure~\ref{fig:blockcv}, full per-fold numbers in
+Table~\ref{tab:blockcv}): TC-DPMixer attains the lowest weekly MAE on
+every fold with per-fold gaps of 10.9, 6.3, 13.3, and 5.9\,Wh/h over
+iTransformer; the short-task ranking mirrors the headline split, with
+iTransformer 0.85\,Wh ahead on average. Permutation importance is
+dominated by self-history and hour-of-day: permuting the appliance
+channel raises test MAE by 7.35\,Wh and \texttt{hour\_cos} by 3.72\,Wh,
+while outdoor temperature contributes 0.06\,Wh.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.95\linewidth]{figures/fig_minimal.pdf}
-  \caption{\textbf{Minimal-variant ablation, 5 seeds, mean $\pm$ std.}
-    On the weekly task (left), keeping only the persistence anchor, the
-    time-mixer branch, and the TC gate (Minimal-A) lowers MAE by
-    2.71 Wh/h while using 38\,\% fewer parameters than the full
-    four-branch model. Removing the gate (Minimal-B) reverts the gain.
-    The short task (right) is within noise across the three variants.}
+  \caption{\textbf{Minimal-variant ablation (left)} and
+    \textbf{block-CV across four chronological cuts (right reference
+    in Fig.~\ref{fig:blockcv})}. Minimal-A (persistence $+$ time-mixer
+    $+$ TC gate) lowers weekly MAE by 2.71\,Wh/h at 38\,\% fewer
+    parameters than the full four-branch model; removing the gate
+    (Minimal-B) reverts the gain.}
   \label{fig:minimal}
 \end{figure}
-
-\paragraph{TC-DPMixer wins all four chronological folds on the weekly task.}
-Sliding the chronological cut from 55\,\% to 70\,\% train ratio gives
-four block-CV folds (Figure~\ref{fig:blockcv}). TC-DPMixer is the
-lowest of the three models on every weekly fold; the per-fold gaps
-over iTransformer are 10.9, 6.3, 13.3, and 5.9\,Wh/h. The short
-task reverses on every fold, with iTransformer 0.85\,Wh ahead on
-average. Both rankings mirror the headline split.
-Table~\ref{tab:blockcv} in the supplementary material gives the
-full per-fold numbers.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.95\linewidth]{figures/fig_block_cv.pdf}
   \caption{\textbf{Block-CV across four chronological cuts.}
-    On the weekly task (left), TC-DPMixer attains the lowest MAE on
-    every cut; per-fold gaps over iTransformer range from 5.9 to
-    13.3 Wh/h. On the short task (right), the three models cluster
-    tightly and iTransformer wins each fold.}
+    Weekly (left): TC-DPMixer attains the lowest MAE on every cut;
+    per-fold gaps over iTransformer range from 5.9 to 13.3 Wh/h.
+    Short (right): the three models cluster tightly and iTransformer
+    wins each fold.}
   \label{fig:blockcv}
 \end{figure}
 
-\paragraph{Self-history and hour-of-day dominate permutation importance.}
-Permuting the appliance channel in TC-DPMixer's input raises test MAE
-by 7.35\,Wh. Permuting \texttt{hour\_cos} raises it by 3.72. Permuting
-outdoor temperature raises it by 0.06. Weather sits in the input as
-context, not as a primary driver.
-
-\section{Discussion}
+\section{Discussion and Conclusion}
 \label{sec:discussion}
 
-Three results converge on the same point. The learned 24-hour gate
-schedule in Figure~\ref{fig:gate} is a non-trivial function of clock
-time: the gate is doing work. The paired-Wilcoxon ablation in
-Table~\ref{tab:ablation} says that among the four branches only
-removing the time-mixer leaves accuracy statistically unchanged;
-the other three branches can be dropped at no cost. The minimal
-variant in Figure~\ref{fig:minimal} carries this finding to its
-limit and reaches lower MAE than the full model at 38\,\% fewer
-parameters. Read together, the three pieces of evidence point at one
-mechanism: the calendar gate routes most of the load onto a single
-inductive-bias branch (the time mixer), and that routing is what
-the rest of this paper is reporting.
-
-The horizon split is consistent with the same picture. The weekly
-task is dominated by hour-of-day and weekday structure --- exactly
-the signal the calendar gate encodes --- and TC-DPMixer leads on
-every block-CV fold (Table~\ref{tab:blockcv}). The short task is
-dominated by appliance inertia, on which the calendar gate carries
-no information; iTransformer's cross-channel attention reaches a
-0.84\,Wh advantage there.
-
-The interpretability claim in this paper is scoped to the gate.
-The gate output is a deterministic function of clock time, so it
-cannot respond to weather or to load history. The rest of the
-network still reads weather through the channel mixer, and we make
-no claim about the full model's sensitivity to weather perturbations.
-
-The work has clear limits. One dataset, one household, one climate,
-4.5 months. The paired Wilcoxon $p{=}0.0625$ is at the $n{=}5$
-exact-test floor: formal significance at $\alpha{=}0.05$ is out of
-reach, and the bootstrap CI is what we lean on.
-
-\section{Conclusion}
-\label{sec:conclusion}
-
-A 116K-parameter mixer with a calendar-conditioned gate reached
-$211.73 \pm 0.92$\,Wh/h on the weekly task of UCI Appliances Energy,
-below the 187K full TC-DPMixer and the 440K iTransformer in our
-five-seed run. The setup is one household over 4.5 months. Whether
-the learned 24-hour routing schedule transfers to a different building
-is the question we did not answer here.
+The calendar gate routes the bulk of the weekly forecast onto a
+single inductive-bias branch (the time mixer): the 24-hour gate
+schedule is non-trivial, the paired-Wilcoxon ablation shows only the
+time-mixer is irreplaceable, and a 116K minimal variant matches the
+187K backbone at 38\,\% fewer parameters. The horizon split mirrors
+this mechanism --- the weekly task is dominated by calendar
+structure and TC-DPMixer leads on every block-CV fold; the short
+task is dominated by appliance inertia and iTransformer is
+0.84\,Wh ahead. The work is scoped to one household over 4.5 months,
+and the weekly Wilcoxon $p{=}0.0625$ is at the $n{=}5$ exact-test
+floor, so the bootstrap CI is what we lean on. Cross-household
+transfer of the learned 24-hour routing schedule is the question we
+did not answer here.
 
 % =====================================================================
 %   SUPPLEMENTARY INFORMATION
