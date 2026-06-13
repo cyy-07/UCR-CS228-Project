@@ -15,7 +15,6 @@
 \usepackage{microtype}          % microtypography
 \usepackage{xcolor}             % colors
 \usepackage{graphicx}           % figures
-\newcommand{\new}[1]{{\color{red} #1}}
 
 \title{TC-DPMixer: A Small, Interpretable Time-Conditioned Mixer for
        Multi-Horizon Energy Forecasting}
@@ -114,7 +113,7 @@ the time axis on the target channel followed by a linear projection
 to $H$ \citep{tsmixer}. Hidden dimensions and dropout are listed in
 Appendix~\ref{si:impl}.
 
-\paragraph{Time-conditioned gating (TC).}
+\paragraph{Time-encoding-conditioned gating (TC).}
 In TC-DPMixer the four branch gates are produced on-the-fly by a
 small MLP that reads only the calendar features at the last input
 step, $c_{t}\in\mathbb{R}^{6}$:
@@ -126,15 +125,13 @@ step, $c_{t}\in\mathbb{R}^{6}$:
 \label{eq:tc}
 \end{equation}
 where $\mathrm{MLP}$ is a $6\to 16\to 4$ feed-forward network with
-ReLU activations and the output layer initialised to zero, so the
-network starts with all four branch weights equal to one. The gates
-are not constrained to a probability simplex; each can independently
-amplify or down-weight its branch in $[0, 2]$. The routing idea
+ReLU activation functions and the output layer initialized to zero, so the
+network starts with all four branch weights equal to one. Unlike softmax-based routing, the four gates are not normalized across branches. Each gate independently scales its corresponding branch within [0,2]. The routing idea
 follows Mixture-of-Linear-Experts \citep{mole}; the experts here are
 heterogeneous inductive-bias branches rather than copies of the same
-linear head used in the original MoLE paper. Because $c_{t}$ contains
+linear head used in the original MoLE paper. Also, because $c_{t}$ contains
 no weather or load history, the 24-hour schedule
-$\alpha_{k}(\cdot)$ is a fixed function of the calendar
+$\alpha_{k}(\cdot)$ is a fixed function of the time
 (Figure~\ref{fig:gate}).
 
 \begin{figure}[t]
@@ -173,14 +170,17 @@ Persistence itself has a negative $R^{2}$ on the short split
 \paragraph{Main results.}
 TC-DPMixer achieves the best weekly MAE at
 $214.44 \pm 0.75$\,Wh/h; iTransformer leads on the short horizon at
-$34.15 \pm 0.48$\,Wh (Table~\ref{tab:headline}). The weekly paired
-difference is 5.47\,Wh/h with 95\,\% bootstrap CI $[-6.93, -4.11]$
-and paired Cohen's $d{=}2.87$; the Wilcoxon test gives $W{=}0$ and
-$p{=}0.0625$, the $n{=}5$ exact-test floor, so we lean on the CI
-rather than the $p$-value. On the short horizon TC-DPMixer trails
-iTransformer by 0.84\,Wh at one-sixth the parameter count
-(67K vs.\ 412K), consistent with cross-channel attention paying off
-where the appliance signal still carries useful inertia.
+$34.15 \pm 0.48$\,Wh, with TC-DPMixer in second place
+(Table~\ref{tab:headline}). The weekly paired difference is
+5.47\,Wh/h, with 95\,\% bootstrap CI $[-6.93, -4.11]$, paired
+Cohen's $d{=}2.87$, and Wilcoxon $W{=}0$, $p{=}0.0625$ (the
+$n{=}5$ exact-test floor). On the short horizon, TC-DPMixer trails
+iTransformer by only 0.84\,Wh while using approximately one-sixth of
+the parameters (67K vs.\ 412K), suggesting that similar predictive
+performance can be achieved with a much smaller model. The
+time-encoding gate also improves the weekly MAE from 217.09\,Wh/h
+to 214.44\,Wh/h, indicating that routing based on temporal context
+contributes beyond the un-gated DPMixer backbone.
 
 \begin{table}[h]
   \centering
@@ -207,26 +207,27 @@ where the appliance signal still carries useful inertia.
 \end{table}
 
 \paragraph{Gate analysis.}
-The calendar gate is directly readable as a 24-hour policy
+The time-encoding gate is directly readable as a 24-hour policy
 (Figure~\ref{fig:gate}): the seasonal weight dominates overnight,
-while the trend weight rises as activity picks up. Around 2--3\,a.m.,
-when household demand follows a regular nightly baseline, the gate
-places almost all the weight on the seasonal branch. Around
-5--7\,p.m., when usage becomes activity-dependent --- cooking,
-returning home, evening appliances --- the gate shifts toward the
-trend branch, which is responsive to the most recent observations.
-Perturbing outdoor temperature by $\pm 10\,^{\circ}$C produces zero
-RMS change in the gate output, since temperature is not part of its
-input.
+while the trend weight rises as activity picks up. For example,
+around 2--3\,a.m., when household demand follows a regular nightly
+baseline, the gate places almost all the weight on the seasonal
+branch. Around 5--7\,p.m., when usage becomes activity-dependent
+(cooking, returning home, evening appliances) and energy
+consumption becomes unstable, the gate shifts toward the trend
+branch, which is responsive to the most recent observations rather
+than the regular seasonal pattern. To verify that the gate encodes
+only time features, we perturb the outdoor temperature by
+$\pm 10\,^{\circ}$C and observe zero RMS change in the gate output,
+since temperature is not part of its input.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.78\linewidth]{figures/fig_gate_policy.pdf}
-  \caption{\textbf{Calendar-conditioned gate schedule}, plotted for
-    a 2-gate TC-DLinear analogue. The same
+  \caption{\textbf{time-encoding-conditioned gate schedule}, plotted for
+    a 2-gate TC-DLinear analogue on weekdays and weekend. The same
     $2\sigma(\mathrm{MLP}(c_{t}))$ gating appears in TC-DPMixer with
-    four gates. A $\pm 10\,^{\circ}$C perturbation of outdoor
-    temperature leaves the curve unchanged.}
+    four gates.}
   \label{fig:gate}
 \end{figure}
 
@@ -241,12 +242,12 @@ average, at six times the parameter count of TC-DPMixer.
 Permutation importance is dominated by self-history and hour-of-day:
 permuting the appliance channel raises test MAE by 7.35\,Wh and
 \texttt{hour\_cos} by 3.72\,Wh, while outdoor temperature contributes
-0.06\,Wh --- the model relies on the temporal signal the calendar
-gate is designed to read. A stripped variant that retains only the
-persistence anchor, the time-mixer branch, and the calendar gate
-remains competitive (Appendix~\ref{si:minimal}), suggesting that
-the calendar-conditioned routing captures a large fraction of the
-weekly forecasting signal.
+0.06\,Wh. These results indicate that temporal information is substantially more
+important than weather variables on this dataset. A stripped variant retaining only the persistence anchor, the
+time-mixer branch, and the time-encoding gate remains competitive
+(Appendix~\ref{si:minimal}), suggesting that a substantial fraction
+of the weekly forecasting signal can be captured by the routing
+mechanism and the temporal branch alone.
 
 \begin{figure}[h]
   \centering
@@ -262,20 +263,22 @@ weekly forecasting signal.
 \paragraph{From regression to spike detection.}
 Throughout this report we have measured models by exact Wh MAE. In
 practice, a utility operator often does not need the precise load:
-what matters is whether the next operating window will contain a
-demand \emph{spike} that strains the grid. We therefore recast the
-same input as a binary classification problem --- for each of the
-next $H$ steps, predict a $\{0, 1\}$ label indicating whether the
-load exceeds a training-set percentile threshold --- and replace
-TC-DPMixer's regression head with a class-balanced BCE classification
-head while keeping the four-branch backbone unchanged. Under the two
-threshold choices we tested (top 10\,\%, $p_{90}$, and top 5\,\%,
-$p_{95}$, of the training distribution), the backbone attains macro
-AUC-ROC of 0.81 and 0.79 respectively --- the highest among all
-contenders we ran, including a flat logistic-regression baseline at
-0.79 / 0.77 (full per-horizon table in Appendix~\ref{si:spike}). On
-an entirely held-out week the 168-hour forecast already tracks both
-the diurnal baseline and the individual spikes hour-by-hour
+what really matters is whether the next operating window will
+contain a demand \emph{spike} that strains the grid. We therefore
+re-frame the task as a binary classification problem --- for each
+future time step, predict whether the appliance load exceeds a
+training-set percentile threshold --- and replace TC-DPMixer's
+regression head with a class-balanced BCE head while keeping the
+four-branch backbone unchanged. The model then outputs a sequence
+of logits, one per future step, indicating whether that step is
+likely to exceed the threshold. Under the two threshold choices we
+tested (top 10\,\%, $p_{90}$, and top 5\,\%, $p_{95}$, of the
+training distribution), the backbone attains macro AUC-ROC of 0.81
+and 0.79 respectively --- the highest among all contenders we ran,
+including a flat logistic-regression baseline at 0.79 / 0.77 (full
+per-horizon table in Appendix~\ref{si:spike}). On an entirely
+held-out week the 168-hour forecast already tracks both the diurnal
+baseline and the individual spikes hour-by-hour
 (Figure~\ref{fig:spike}). The inductive biases built into the
 backbone for regression therefore carry over to the operationally
 more useful task of detecting when a spike is coming.
@@ -295,23 +298,41 @@ more useful task of detecting when a spike is coming.
 \section{Discussion and Conclusion}
 \label{sec:discussion}
 
-The four-branch TC-DPMixer reaches the lowest weekly MAE in our
-five-seed run while staying within 1\,Wh of iTransformer on the
-short horizon at one-sixth the parameter count; its calendar gate
-emits a non-trivial 24-hour routing schedule that is readable
-directly off clock time. The horizon split mirrors this mechanism
---- the weekly task is dominated by calendar structure and
-TC-DPMixer leads on every block-CV fold; the short task is dominated
-by appliance inertia, on which the calendar gate carries no
-information, and iTransformer's cross-channel attention takes the
-0.84\,Wh advantage there. The same backbone, repurposed with a
-binary head, also serves as a spike detector --- the operationally
-useful generalization for a utility operator. The work is scoped to
-one household over 4.5 months, and the weekly Wilcoxon
-$p{=}0.0625$ is at the $n{=}5$ exact-test floor, so the bootstrap CI
-is what we lean on. Cross-household transfer of the learned 24-hour
-routing schedule is the question we did not answer here.
+TC-DPMixer was motivated by a simple question: can multiple
+forecasting mechanisms be combined through a routing policy that
+still remains easy to inspect? On the UCI Appliances Energy dataset,
+the answer appears to be yes. The model achieves the lowest weekly
+forecasting error among the methods we tested, while the
+time-encoding-conditioned gate produces a directly readable 24-hour
+schedule that can be visualized without examining internal
+activations or attention maps.
 
+
+At the same time, several limitations should be acknowledged. The
+study uses a single-household dataset covering approximately four and
+a half months, so the learned routing schedule may reflect properties
+of this particular home rather than general household behavior.
+Moreover, the dataset contains more than ten thousand observations,
+yet the current experiments only evaluate fixed-window forecasting
+tasks. Future work could investigate more challenging settings such
+as month-ahead forecasting, cross-season prediction, and transfer
+across different households.
+
+In conclusion, three observations emerge from this study.
+
+First,
+the usefulness of a forecasting mechanism depends strongly on the
+prediction horizon: time-encoding-conditioned routing contributes most on
+the weekly task, while short-horizon forecasting remains largely
+driven by recent observations. 
+
+
+Second, temporal and calendar
+information appear to be more informative than most weather variables
+on this dataset, suggesting that household energy consumption is
+primarily governed by recurring behavioral patterns. 
+
+Third, the same TC-DPMixer backbone can support both energy forecasting and spike detection with only a change in the output head, suggesting that the forecasting mechanisms learned by the model remain useful beyond a single prediction objective.
 % =====================================================================
 %   SUPPLEMENTARY INFORMATION
 % =====================================================================
@@ -371,7 +392,7 @@ pred\_len. The time mixer applies the same MLP-Mixer pair along the
 $L$ axis on the target channel only (hidden dim $128$, dropout $0.1$),
 then projects to pred\_len.
 
-\paragraph{Calendar gate.}
+\paragraph{Time-encoding gate.}
 The gate MLP takes the 6-dim calendar feature vector
 (hour\_sin/cos, weekday\_sin/cos, weekend\_flag, NSM) at the
 last input step and outputs four branch weights via
@@ -390,11 +411,13 @@ on the block-CV runs. Five seeds (\texttt{42--46}) are used for every
 mean$\pm$std reported in the main paper. No hyperparameters were
 tuned on the test split.
 
+
 \paragraph{Hardware.}
-The latency benchmark in Table~\ref{tab:lat} ran on a single
-NVIDIA RTX 6000 Ada GPU under PyTorch 2.4.0+cu121 in eager mode,
-with 100 warm-up forwards and 1{,}000 timed forwards per
-configuration.
+All experiments were conducted on the UCR BCOE High-Performance
+Computing Cluster using a single NVIDIA RTX 6000 Ada GPU under
+PyTorch 2.4.0+cu121 in eager mode. The latency benchmark in
+Table~\ref{tab:lat} used 100 warm-up forwards followed by
+1{,}000 timed forwards per configuration.
 
 
 \section{Design-space sensitivity around the four-branch backbone}
@@ -403,8 +426,8 @@ configuration.
 The four-branch TC-DPMixer reported in the main paper is the
 headline configuration: the persistence anchor, target decomposition,
 channel mixer, and time mixer together provide coverage over
-heterogeneous inductive biases, which is what the calendar gate then
-routes between. To probe how sensitive the headline numbers are to
+heterogeneous inductive biases, which is what the time-encoding gate
+then routes between. To probe how sensitive the headline numbers are to
 the choice of these branches, we report two complementary checks ---
 a per-module contribution analysis and a stripped configuration.
 
@@ -441,13 +464,13 @@ redundant on this dataset.
 
 \paragraph{Stripped configuration.}
 A stripped configuration that retains only the persistence anchor,
-the time-mixer branch, and the calendar gate
+the time-mixer branch, and the time-encoding gate
 (Figure~\ref{fig:minimal}) tracks the full TC-DPMixer on the weekly
 task at $211.73 \pm 0.92$\,Wh/h with 116K parameters; removing the
 gate from the same configuration reverts the result to
 $214.83 \pm 0.50$\,Wh/h. The four-branch backbone is retained as the
 headline configuration because its inductive-bias coverage is what
-the calendar gate is designed to route between; the stripped
+the time-encoding gate is designed to route between; the stripped
 configuration is reported as a sensitivity check.
 
 \begin{figure}[h]
@@ -456,7 +479,7 @@ configuration is reported as a sensitivity check.
   \caption{\textbf{Stripped configuration sensitivity check, 5 seeds,
     mean $\pm$ std.} Weekly task (left) and short task (right). The
     stripped configuration keeps only the persistence anchor, the
-    time-mixer branch, and the calendar gate; the variant on the
+    time-mixer branch, and the time-encoding gate; the variant on the
     rightmost bar removes the gate from the same configuration.}
   \label{fig:minimal}
 \end{figure}
@@ -697,7 +720,7 @@ Standardised-input Gaussian noise barely moves the deep models;
 random feature masking is far more damaging. Persistence is immune
 to feature masking because it never uses non-target features.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \small
 \caption{Robustness under inference-time corruption (test MAE in Wh).}
@@ -728,7 +751,7 @@ parameters) does not benefit. We exclude these columns from the
 headline recipe to keep the input set free of features known to be
 uninformative by construction.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \small
 \caption{Short-horizon test MAE (Wh) with and without the two
@@ -748,7 +771,6 @@ PatchTST    & 56.3          & \textbf{53.6}  & $-2.7$ \\
 \bottomrule
 \end{tabular}
 \end{table}
-
 
 \section*{LLM Usage}
 Claude Opus 4.7 (Anthropic) was used throughout this project as a
