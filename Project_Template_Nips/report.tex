@@ -32,7 +32,7 @@
 \maketitle
 
 \begin{abstract}
-Accurate multi-horizon forecasting of household energy consumption requires combining multiple inductive biases, yet most existing models apply a single uniform forecasting mechanism across all time scales. We propose TC-DPMixer, a lightweight forecasting model that combines heterogeneous predictive components through a time-encoding routing mechanism, producing an interpretable time-of-day dependent policy. On the weekly forecasting task, TC-DPMixer achieves $214.44 \pm 0.75$ Wh/h, outperforming iTransformer at $219.91 \pm 2.42$ while using significantly fewer parameters (187K vs. 440K), with a statistically significant paired improvement.  The model consists of four standard forecasting components: a persistence anchor, a decomposition branch, a channel-mixing module, and a time-mixing module  with interpretability concentrated entirely in the time-encoding-conditioned gating mechanism.On the short-horizon task, performance is slightly worse than iTransformer (34.99 vs. 34.15 Wh), indicating a trade-off between efficiency and short-term accuracy.
+Accurate multi-horizon forecasting of household energy consumption requires combining multiple inductive biases, yet most existing models apply a single uniform forecasting mechanism across all time scales. We propose TC-DPMixer, a lightweight forecasting model that combines heterogeneous predictive components through a time-encoding routing mechanism, producing an interpretable time-of-day dependent policy. On the weekly forecasting task, TC-DPMixer achieves $214.44 \pm 0.75$ Wh/h, outperforming iTransformer at $219.91 \pm 2.42$ while using significantly fewer parameters (187K vs. 440K), with a statistically significant paired improvement.  The model consists of four standard forecasting components: a persistence anchor, a decomposition branch, a channel-mixing module, and a time-mixing module  with interpretability concentrated entirely in the time-encoding gate.On the short-horizon task, performance is slightly worse than iTransformer (34.99 vs. 34.15 Wh), indicating a trade-off between efficiency and short-term accuracy.
 This is a single-household study and cross-domain generalization is not evaluated. Code: \href{https://github.com/cyy-07/UCR-CS228-Project}{github.com/cyy-07/UCR-CS228-Project}.
 \end{abstract}
 
@@ -46,7 +46,7 @@ In recent years, Transformer-based models such as iTransformer \citep{itransform
 
 Can a lightweight forecasting model combine multiple predictive mechanisms while remaining easy to inspect?
 
-To this end, we propose TC-DPMixer, a four-branch additive forecasting model consisting of a persistence anchor, a decomposition branch, a channel-mixing branch, and a time-mixing branch. A small calendar-conditioned gating that determines the relative contribution of each branch throughout the day. Because the gate depends only on calendar features, the resulting routing policy can be visualized directly as a 24-hour schedule.
+To this end, we propose TC-DPMixer, a four-branch additive forecasting model consisting of a persistence anchor, a decomposition branch, a channel-mixing branch, and a time-mixing branch. A small time-encoding gate determines the relative contribution of each branch throughout the day. Because the gate depends only on calendar features, the resulting routing policy can be visualized directly as a 24-hour schedule.
 
 
 \textbf{Contributions.}
