@@ -612,12 +612,16 @@ outdoor temperature $T_\text{out}$ contributes $+0.06$.
 Source: \texttt{results/permutation\_importance.csv}.
 
 
-\section{Additional ablations}
+\section{Additional ablations and early experiments}
 \label{si:additional}
 
-This appendix consolidates ablations on the short-horizon task that
-support the headline recipe (\texttt{no\_rv + time + log\_target},
-$L_1$ loss).
+This appendix consolidates short-horizon ablations carried out during
+the milestone stage of the project. They explain how we arrived at the
+headline recipe (\texttt{no\_rv + time + log\_target}, $L_1$ loss) and
+include two robustness checks --- input corruption and weakly
+informative features --- whose findings did not make it into the main
+paper but motivated the inductive-bias choices in the DPMixer
+backbone.
 
 \paragraph{Feature engineering.}
 Using only the target's own history is competitive with using all 26
@@ -707,6 +711,40 @@ MLP         & 48.6          & 48.6          & 48.8          & 61.4          & 66
 LSTM        & \textbf{41.7} & \textbf{41.7} & \textbf{41.8} & \textbf{47.6} & \textbf{50.8} \\
 DLinear     & 53.1          & 53.1          & 53.9          & 59.7          & 62.1          \\
 PatchTST    & 56.3          & 56.2          & 56.0          & 62.5          & 64.8          \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Weakly-informative features (rv1, rv2).}
+The Candanedo 2017 dataset ships with two columns, \texttt{rv1} and
+\texttt{rv2}, that the dataset authors injected as uniformly random
+variables for a feature-importance sanity check. Including them as
+input features lowers short-horizon MAE for three of the four deep
+models by 2--4\,Wh and slightly raises it for DLinear
+(Table~\ref{tab:rv}). On this dataset the two random columns appear to
+act as a weak input-perturbation regulariser for the over-parameterised
+models, while the already strongly regularised DLinear (4.7K
+parameters) does not benefit. We exclude these columns from the
+headline recipe to keep the input set free of features known to be
+uninformative by construction.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Short-horizon test MAE (Wh) with and without the two
+  dataset-supplied random columns \texttt{rv1}, \texttt{rv2}.
+  $\Delta$ is positive when removing the random columns improves MAE
+  and negative when including them improves it.}
+\label{tab:rv}
+\begin{tabular}{lrrr}
+\toprule
+Model & \texttt{no\_rv} (26 feats) & \texttt{all} (28 feats) & $\Delta$ \\
+\midrule
+Persistence & 48.9          & 48.9           & 0.0  \\
+MLP         & 59.2          & \textbf{55.1}  & $-4.2$ \\
+LSTM        & 53.1          & \textbf{50.7}  & $-2.4$ \\
+DLinear     & \textbf{48.7} & 50.7           & $+2.1$ \\
+PatchTST    & 56.3          & \textbf{53.6}  & $-2.7$ \\
 \bottomrule
 \end{tabular}
 \end{table}
