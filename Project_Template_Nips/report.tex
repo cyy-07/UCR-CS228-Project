@@ -46,12 +46,12 @@ In recent years, Transformer-based models such as iTransformer \citep{itransform
 
 Can a lightweight forecasting model combine multiple predictive mechanisms while remaining easy to inspect?
 
-To this end, we propose TC-DPMixer, a four-branch additive forecasting model consisting of a persistence anchor, a decomposition branch, a channel-mixing branch, and a time-mixing branch. A small time-encoding gate determines the relative contribution of each branch throughout the day. Because the gate depends only on calendar features, the resulting routing policy can be visualized directly as a 24-hour schedule.
+To this end, we propose TC-DPMixer, a four-branch additive forecasting model consisting of a persistence anchor, a decomposition branch, a channel-mixing branch, and a time-mixing branch. A small time-encoding gate determines the relative contribution of each branch throughout the day. Because the gate depends only on time-encoding features, the resulting routing policy can be visualized directly as a 24-hour schedule.
 
 
 \textbf{Contributions.}
 \begin{itemize}
-\item We propose TC-DPMixer, a four-branch additive forecasting model whose routing policy is determined by calendar features alone, allowing the learned 24-hour schedule to be visualized directly.
+\item We propose TC-DPMixer, a four-branch additive forecasting model whose routing policy is determined by time-encoding features alone, allowing the learned 24-hour schedule to be visualized directly.
 
 \item We establish a reproducible benchmark on the UCI Appliances Energy dataset across short- and long-horizon forecasting tasks, including statistical significance tests, block cross-validation, and efficiency analysis.
 
@@ -64,8 +64,8 @@ To this end, we propose TC-DPMixer, a four-branch additive forecasting model con
 \paragraph{Four-branch backbone (DPMixer).}
 A window $x_{1:L}\in\mathbb{R}^{L\times C}$ holds $L$ steps of $C$
 input channels --- appliance load, lights, room temperatures and
-humidities, six outdoor weather variables, and six calendar
-encodings. The forecast target
+humidities, six outdoor weather variables, and six time-encoding
+features. The forecast target
 $\hat{y}_{L{+}1:L{+}H}\in\mathbb{R}^{H}$ is the appliance channel
 and $H\in\{24, 168\}$ controls the short and weekly horizons.
 DPMixer is a weighted sum of four parallel branches:
@@ -91,8 +91,8 @@ Appendix~\ref{si:impl}.
 
 \paragraph{Time-encoding gate.}
 In TC-DPMixer the four branch gates are produced on-the-fly by a
-small MLP that reads only the calendar features at the last input
-step, $c_{t}\in\mathbb{R}^{6}$:
+small MLP that reads only the time-encoding features at the last
+input step, $c_{t}\in\mathbb{R}^{6}$:
 \begin{equation}
 \alpha_{k}(c_{t})
 \;=\; 2\,\sigma\!\big(\mathrm{MLP}_{k}(c_{t})\big)
@@ -116,7 +116,7 @@ $\alpha_{k}(\cdot)$ is a fixed function of clock time
   \caption{\textbf{TC-DPMixer architecture.} Four parallel branches
     (persistence anchor, target decomposition, channel mixer, time
     mixer) are summed under per-branch gates. A small MLP reads only
-    the calendar feature vector $c_{t}$ and outputs four gates
+    the time-encoding feature vector $c_{t}$ and outputs four gates
     $\alpha_{k} = 2\,\sigma(\mathrm{MLP}_{k}(c_{t})) \in [0, 2]$; the
     gate has no access to weather or load history, so its 24-hour
     schedule is a deterministic function of clock time.}
@@ -301,10 +301,10 @@ the weekly task, while short-horizon forecasting remains largely
 driven by recent observations. 
 
 
-Second, temporal and calendar
-information appear to be more informative than most weather variables
-on this dataset, suggesting that household energy consumption is
-primarily governed by recurring behavioral patterns. 
+Second, temporal and time-encoding information appear to be more
+informative than most weather variables on this dataset, suggesting
+that household energy consumption is primarily governed by recurring
+behavioral patterns. 
 
 Third, the same TC-DPMixer backbone can support both energy forecasting and spike detection with only a change in the output head, suggesting that the forecasting mechanisms learned by the model remain useful beyond a single prediction objective.
 % =====================================================================
@@ -347,8 +347,8 @@ operator a 24-hour schedule to sanity-check.
 Mixture-of-Linear-Experts (MoLE) \citep{mole} routes linear
 forecasters through a softmax gate. We adopt the routing form but
 apply it to heterogeneous inductive-bias branches rather than
-homogeneous linear experts, and we condition the gate on calendar
-features only so its policy is a fixed 24-hour curve. NILM
+homogeneous linear experts, and we condition the gate on
+time-encoding features only so its policy is a fixed 24-hour curve. NILM
 sequence-to-point work \citep{nilm} motivates our use of the
 appliance channel as the primary target.
 
@@ -367,7 +367,7 @@ $L$ axis on the target channel only (hidden dim $128$, dropout $0.1$),
 then projects to pred\_len.
 
 \paragraph{Time-encoding gate.}
-The gate MLP takes the 6-dim calendar feature vector
+The gate MLP takes the 6-dim time-encoding feature vector
 (hour\_sin/cos, weekday\_sin/cos, weekend\_flag, NSM) at the
 last input step and outputs four branch weights via
 $\sigma(\mathrm{MLP}(c_t)) \cdot 2$, giving weights in
